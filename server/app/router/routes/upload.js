@@ -2,6 +2,8 @@ const express = require('express');
 const file_upload = require('express-fileupload');
 const app = express();
 const pool = require('../../database/pool');
+const fs = require('fs');
+const path = require('path');
 
 //DEFAULT OPTIONS
 app.use(file_upload());
@@ -49,10 +51,6 @@ app.put('/upload/:fileType/:id', (req, res) => {
         }
 
         userImage(id_file_type, res, file_name)
-        // res.json({
-        //     success: true,
-        //     message: 'the image has been successfully uploaded'
-        // })
     })
 });
 
@@ -61,12 +59,13 @@ async function userImage(id_user, res, file_name) {
         const rows_search = (await pool('SELECT * FROM users WHERE id_user = $1', id_user)).rows;
 
         if (rows_search.length == 0) {
+            deleteFile(file_name, 'users')
             return res.status(400).json({
                 success: false,
                 message: `user ${id_user} does not exists`
             })
         }
-
+        deleteFile(rows_search[0].profile_image, 'users')
         const result = (await pool('UPDATE users SET profile_image = $1 WHERE id_user = $2', file_name, id_user)).rows;
         console.log("result: ", result);
         res.json({
@@ -78,6 +77,13 @@ async function userImage(id_user, res, file_name) {
             success: false,
             error
         });
+    }
+}
+
+function deleteFile(image_name, file_type) {
+    let image_path = path.resolve(__dirname, `../../../uploads/${file_type}/${image_name}`);
+    if (fs.existsSync(image_path)) {
+        fs.unlinkSync(image_path)
     }
 }
 
