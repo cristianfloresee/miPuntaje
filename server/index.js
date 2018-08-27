@@ -10,7 +10,6 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const colors = require('colors');
 const path = require('path');
-
 //VARIABLES
 var app;
 var httpServer;
@@ -27,8 +26,12 @@ function initWebServer() {
     num_connections = 0;
 
     //CARGA DE MIDDLEWARES
-	app.use(cors({ origin: '*' }));
-	app.use(bodyParser.urlencoded({ extended: false })); //CONFIGURACIÓN DE BODYPARSER
+    app.use(cors({
+        origin: '*'
+    }));
+    app.use(bodyParser.urlencoded({
+        extended: false
+    })); //CONFIGURACIÓN DE BODYPARSER
     app.use(bodyParser.json()); //CONVIERTE LA INFO QUE RECIBA DE PETICIÓN A JSON
     app.use(require('./app/router/index')); //CONFIGURACIÓN GLOBAL DE RUTAS
 

@@ -1,7 +1,7 @@
 'use strict'
 
 const bcrypt = require('bcrypt-nodejs');
-const jwt = require('../services/jwt');
+//const jwt = require('../services/jwt');
 const pool = require('../database/pool');
 //const User = require('../models/user');
 

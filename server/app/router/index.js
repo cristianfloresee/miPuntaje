@@ -11,6 +11,7 @@ app.use(require('./routes/sesion'));
 app.use('/colors', require('./routes/color'));
 app.use('/users', require('./routes/user'));
 app.use('/calendars', require('./routes/calendar'));
+app.use(require('./routes/upload'));
 
 module.exports = app;
 
