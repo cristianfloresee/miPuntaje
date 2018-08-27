@@ -1,10 +1,18 @@
-module.exports = (app) => {
-    app.use('/colors', require('./routes/color'));
-    app.use('/users', require('./routes/user'));
-    app.use('/calendars', require('./routes/calendar'));
-};
+// module.exports = (app) => {
+//     app.use('/colors', require('./routes/color'));
+//     app.use('/users', require('./routes/user'));
+//     app.use('/calendars', require('./routes/calendar'));
+// };
 
+const express = require('express');
+const app = express();
 
+app.use(require('./routes/sesion'));
+app.use('/colors', require('./routes/color'));
+app.use('/users', require('./routes/user'));
+app.use('/calendars', require('./routes/calendar'));
+
+module.exports = app;
 
 // const userController = require('../controllers').user;
 //const subjectController = require('../controllers').subject;
@@ -37,4 +45,3 @@ module.exports = (app) => {
 //app.use('/estudiante', require('./routes/estudiante'));
 //app.use('/profesores', require('./routes/profesores'));
 //app.use('/info', require('./routes/info'));
-

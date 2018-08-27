@@ -10,8 +10,8 @@ async function getCalendars(req, res) {
         res.json(rows)
     } catch (error) {
         res.status(500).json({
-            'message': 'error in obtaining calendars',
-            'error': error
+            message: 'error in obtaining calendars',
+            error
         });
     }
 }
@@ -59,7 +59,7 @@ async function createCalendar(req, res) {
         console.log(`${error}`)
         res.status(500).json({
             message: 'error when saving the color',
-            error: error
+            error
         })
     }
 }
@@ -68,19 +68,27 @@ async function updateCalendar(req, res) {
     try {
         const { rows } = await pool('SELECT * FROM calendar');
         res.json(rows)
-    } catch (err) {
-        console.log(`database ${err}`)
-        res.json({'success':false, 'err':err});
+    } catch (error) {
+        console.log(`database ${error}`)
+        res.json({'success':false, 'err':error});
     }
 }
 
 async function deleteCalendar(req, res) {
     try {
-        const { rows } = await pool('SELECT * FROM calendar');
-        res.json(rows)
-    } catch (err) {
-        console.log(`database ${err}`)
-        res.json({'success':false, 'err':err});
+        const id_calendar = req.params.calendarId;
+        const {
+            rows
+        } = await pool('DELETE FROM calendars WHERE id_calendar = $1', id_calendar);
+        res.json({
+            message: 'successfully deleted calendar'
+        });
+    } catch (error) {
+        console.log(`database ${error}`)
+        res.json({
+            success: false,
+            error
+        });
     }
 }
 
@@ -88,5 +96,5 @@ module.exports = {
     getCalendars,
     //createCalendar,
     //updateCalendar,
-    //deleteCalendar
+    deleteCalendar
 }

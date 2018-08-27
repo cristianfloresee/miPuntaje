@@ -11,8 +11,8 @@ async function getColors(req, res) {
         res.json(rows)
     } catch (error) {
         res.status(500).json({
-            'message': 'error in obtaining colors',
-            'error': error
+            message: 'error in obtaining colors',
+            error
         });
     }
 }
@@ -22,13 +22,13 @@ async function getColorsByUserId(req, res) {
     let id_user = req.params.userId
     try {
         const {
-            rows    
+            rows
         } = await pool('SELECT id_color, name, haxadecimal FROM colors WHERE id_color IN (SELECT id_color FROM user_subject_color WHERE id_user = $1)', user_id);
         res.json(rows)
     } catch (error) {
         res.status(500).json({
-            'message': 'error in obtaining user colors',
-            'error': error
+            message: 'error in obtaining user colors',
+            error
         });
     }
 }
@@ -48,24 +48,32 @@ async function createColor(req, res) {
             ]);
             const rows_name = result_search[0].rows;
             const rows_hexadecimal = result_search[1].rows;
-            if (rows_name.length !== 0 && rows_hexadecimal.length !== 0) {
-                return res.status(500).json({
-                    status: 0,
-                    message: 'this color name and color hexadecimal has been taken'
-                })
-            } else if (rows_name.length !== 0) {
-                return res.status(500).send({
-                    status: 1,
-                    message: 'this color name has been taken'
-                })
-            } else if (rows_hexadecimal.length !== 0) {
-                return res.status(500).send({
-                    status: 2,
-                    message: 'this color hexadecimal has been taken'
-                })
-            } else {
-                const { rows } = await pool('INSERT INTO colors(name, hexadecimal) VALUES($1, $2)', name, hexadecimal);
-                res.json({message: 'successfully created color'})
+
+            let combination = `${rows_name.length}${rows_hexadecimal.length}`;
+
+            switch (combination) {
+                case '11':
+                    return res.status(500).json({
+                        status: '11',
+                        message: `this name and hexadecimal has been taken`
+                    })
+                case '10':
+                    return res.status(500).json({
+                        status: '10',
+                        message: `this name has been taken`
+                    })
+                case '01':
+                    return res.status(500).json({
+                        status: '01',
+                        message: `this hexadecimal has been taken`
+                    })
+                default:
+                    const {
+                        rows
+                    } = await pool('INSERT INTO colors(name, hexadecimal) VALUES($1, $2)', name, hexadecimal);
+                    res.json({
+                        message: 'successfully created color'
+                    })
             }
         } else {
             res.status(400).json({
@@ -76,7 +84,7 @@ async function createColor(req, res) {
         console.log(`${error}`)
         res.status(500).json({
             message: 'error when saving the color',
-            error: error
+            error
         })
     }
 }
@@ -89,7 +97,7 @@ async function updateColor(req, res) {
             hexadecimal
         } = req.body;
         if (id_color) {
-            return res.status(500).send({
+            return res.status(500).json({
                 message: 'No tienes permiso para actualizar los datos del usuario'
             });
         }
@@ -97,17 +105,15 @@ async function updateColor(req, res) {
             rows
         } = await pool('UPDATE colors SET name = $1, hexadecimal = $2 WHERE id_color = $3 ', name, hexadecimal, id_color);
 
-        if (!rows) return res.status(400).send({
-            message: 'No se ha podido actualizar el color'
-        })
-        return res.status(200).send({
+        res.status(200).json({
+            message: 'successfully updated color',
             color: rows
         });
     } catch (error) {
         console.log(`database ${error}`)
         res.json({
-            'success': false,
-            'error': error
+            success: false,
+            error
         });
     }
 }
@@ -118,12 +124,14 @@ async function deleteColor(req, res) {
         const {
             rows
         } = await pool('DELETE FROM colors WHERE id_color = $1', id_color);
-        res.json({message: 'successfully deleted color'});
-    } catch (err) {
-        console.log(`database ${err}`)
         res.json({
-            'success': false,
-            'err': err
+            message: 'successfully deleted color'
+        });
+    } catch (error) {
+        console.log(`database ${error}`)
+        res.json({
+            success: false,
+            error
         });
     }
 }

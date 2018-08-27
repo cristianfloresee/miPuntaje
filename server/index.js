@@ -7,7 +7,7 @@ const socket = require('socket.io');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const colors = require('colors');
-
+const path = require('path');
 //EXTRA IMPORTS
 const routes = require('./app/router')
 const SERVER_CONFIG = require('./app/config/config_server');
@@ -29,14 +29,13 @@ function initWebServer() {
     io = socket(httpServer);
     server_port = process.env.PORT || SERVER_CONFIG;
     num_connections = 0;
-    //string_ok = '\x1b[1;32m[OK]\x1b[0m';
 
     //CARGA DE MIDDLEWARES
 	app.use(cors({ origin: '*' }));
 	app.use(bodyParser.urlencoded({ extended: false })); //CONFIGURACIÓN DE BODYPARSER
-	app.use(bodyParser.json()); //CONVIERTE LA INFO QUE RECIBA EN PETICIÓN A JSON
-    var router = require('./app/router')(app);
-    //app.use(routes);
+    app.use(bodyParser.json()); //CONVIERTE LA INFO QUE RECIBA DE PETICIÓN A JSON
+    app.use(require('./app/router/index')); //CONFIGURACIÓN GLOBAL DE RUTAS
+    //var router = require('./app/router')(app);
 
     (async () => {
         try {
