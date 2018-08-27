@@ -1,5 +1,7 @@
 'use strict'
 
+//GLOBAL CONFIG
+require('./app/config/config');
 //LIBS
 const express = require('express');
 const http = require('http');
@@ -8,17 +10,12 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const colors = require('colors');
 const path = require('path');
-//EXTRA IMPORTS
-const routes = require('./app/router')
-const SERVER_CONFIG = require('./app/config/config_server');
 
 //VARIABLES
 var app;
 var httpServer;
 var io;
-var server_port;
 var num_connections;
-var string_ok;
 
 initWebServer();
 
@@ -27,7 +24,6 @@ function initWebServer() {
     app = express();
     httpServer = http.Server(app);
     io = socket(httpServer);
-    server_port = process.env.PORT || SERVER_CONFIG;
     num_connections = 0;
 
     //CARGA DE MIDDLEWARES
@@ -35,13 +31,11 @@ function initWebServer() {
 	app.use(bodyParser.urlencoded({ extended: false })); //CONFIGURACIÓN DE BODYPARSER
     app.use(bodyParser.json()); //CONVIERTE LA INFO QUE RECIBA DE PETICIÓN A JSON
     app.use(require('./app/router/index')); //CONFIGURACIÓN GLOBAL DE RUTAS
-    //var router = require('./app/router')(app);
 
     (async () => {
         try {
-            let server = await httpServer.listen(server_port);
-            //console.log(`webserver listening on http://localhost:${server_port}... ${string_ok}`);
-            console.log(`webserver listening on http://localhost:${server_port}... ${colors.green.bold('[OK]')}`)
+            let server = await httpServer.listen(process.env.PORT);
+            console.log(`webserver listening on http://localhost:${process.env.PORT}... ${colors.green.bold('[OK]')}`)
 
             // io.on('connection', (socket) => {
 

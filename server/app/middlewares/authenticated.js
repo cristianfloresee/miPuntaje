@@ -18,7 +18,7 @@ exports.ensureAuth = function (req, res, next) {
                 error: 'invalid token'
             })
         }
-        req.users = decoded.users;
+        req.users = decoded.users;//??
     })
 
     /*
@@ -47,4 +47,5 @@ exports.ensureAuth = function (req, res, next) {
 
 // let ensureAdminRole = (req, res, next) => {
 //     let user = req,user;
+//'SELECT * FROM user_role WHERE id_user = $1 && id_role = 1'
 // }

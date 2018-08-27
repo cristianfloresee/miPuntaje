@@ -1,6 +1,5 @@
 const { Pool } = require('pg');
-var config_db = require('../config/config_db');
-config_db = config_db[process.env.NODE_ENV] || config_db['development'];
+const config_db = require('../config/config');
 const pool = new Pool(config_db);
 
 async function query (q, ...args) {
