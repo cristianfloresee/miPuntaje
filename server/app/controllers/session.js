@@ -14,7 +14,7 @@ async function login(req, res) {
 
         const {
             rows
-        } = await pool('SELECT * FROM users WHERE username = $1', username);
+        } = await pool('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at FROM users WHERE username = $1', username);
 
         if (rows.length == 0) {
             return res.status(400).json({
@@ -31,10 +31,15 @@ async function login(req, res) {
             })
         }
 
+        const roles = (await pool('SELECT id_role FROM user_role WHERE id_user = $1', user.id_user)).rows;
+        console.log("roles: ", roles);
+
         let token = jwt.sign({
             user: user
         }, process.env.SEED, { expiresIn: process.env.TOKEN_EXPIRATION });
 
+        //DEVOLVER USUARIO SIN CONTRASEÑA!
+        delete user.password;
         return res.json({
             success: true,
             token,
@@ -43,6 +48,7 @@ async function login(req, res) {
 
     } catch (error) {
         res.status(500).json({
+            success: false,
             message: 'error in login',
             error
         });

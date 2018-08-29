@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index",
     "dev": "nodemon index",
-    "configure": "sh ./bin/configure_db.sh"
+    "configure": "sh ./app/bin/configure_db.sh"
   },
   "author": "",
   "license": "MIT",
@@ -21,6 +21,7 @@
     "jsonwebtoken": "^8.3.0",
     "moment": "^2.22.2",
     "pg": "^7.4.3",
+    "pg-error": "^1.0.0",
     "socket.io": "^2.1.1"
   },
   "devDependencies": {

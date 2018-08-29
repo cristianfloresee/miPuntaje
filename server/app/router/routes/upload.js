@@ -50,7 +50,13 @@ app.put('/upload/:fileType/:id', (req, res) => {
             })
         }
 
-        userImage(id_file_type, res, file_name)
+        if(file_type == 'users'){
+            userImage(id_file_type, res, file_name);
+        }
+        else{
+            questionImage(id_file_type, res, file_name);
+        }
+        
     })
 });
 
@@ -67,7 +73,31 @@ async function userImage(id_user, res, file_name) {
         }
         deleteFile(rows_search[0].profile_image, 'users')
         const result = (await pool('UPDATE users SET profile_image = $1 WHERE id_user = $2', file_name, id_user)).rows;
-        console.log("result: ", result);
+        res.json({
+            message: 'imagen cargada en db correctamente'
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error
+        });
+    }
+}
+
+async function questionImage(id_question, res, file_name){
+    try {
+        const rows_search = (await pool('SELECT * FROM questions WHERE id_question = $1', id_question)).rows;
+
+        if (rows_search.length == 0) {
+            deleteFile(file_name, 'questions')
+            return res.status(400).json({
+                success: false,
+                message: `question ${id_question} does not exists`
+            })
+        }
+        deleteFile(rows_search[0].image, 'questions')
+        const result = (await pool('UPDATE questions SET image = $1 WHERE id_question = $2', file_name, id_question)).rows;
         res.json({
             message: 'imagen cargada en db correctamente'
         })

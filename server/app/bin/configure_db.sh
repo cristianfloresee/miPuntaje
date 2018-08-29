@@ -9,6 +9,6 @@ echo "Configuring database: $database..."
 dropdb -U node_user crsoq_db
 createdb -U node_user crsoq_db
 
-psql -U node_user crsoq_db < ./bin/sql/crsoq.sql
+psql -U node_user crsoq_db < ./bin/sql/$database.sql
 
 echo "$database configured..."

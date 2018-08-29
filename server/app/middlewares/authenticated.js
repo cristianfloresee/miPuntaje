@@ -1,9 +1,11 @@
 'use strict'
 
 const jwt = require('jsonwebtoken');
-const moment = require('moment');
 
-exports.ensureAuth = function (req, res, next) {
+// ============================
+// Verifica Token
+// ============================
+let checkToken = (req, res, next) => {
     if (!req.headers.authorization) {
         return res.status(401).json({
             message: 'The request does not have the authentication header'
@@ -18,34 +20,42 @@ exports.ensureAuth = function (req, res, next) {
                 error: 'invalid token'
             })
         }
-        req.users = decoded.users;//??
+        req.user_payload = decoded.user;
     })
-
-    /*
-    if (!req.headers.authorization) return res.status({
-        message: 'La petición no tiene la cabecera de autentificación'
-    });
-
-
-    var token = req.header.authorization.replace(/['"]+/g, '');
-    try {
-        var payload = jwt.decode(token, seed);
-        if (payload.exp <= moment.unix()) {
-            return res.status(401).send({
-                message: 'token expired'
-            })
-        }
-    } catch (ex) {
-        return res.status(401).send({
-            message: 'invalid token'
-        })
-    }
-
-    req.user = payload;*/
     next();
 }
 
-// let ensureAdminRole = (req, res, next) => {
-//     let user = req,user;
+
+
+// ============================
+// Verifica Token de Imagen
+// ============================
+let checkTokenImage = (req, res, next) => {
+
+    let token = req.query.authorization;
+    
+    jwt.verify(token, process.env.SEED, (error, decoded) => {
+        if (error) {
+            return res.status(401).json({
+                success: false,
+                error: 'invalid token'
+            })
+        }
+        req.user = decoded.user;
+        next();
+    })
+}
+
+// ============================
+// Verifica Role Administrador
+// ============================
+ let checkAdminRole = (req, res, next) => {
+     let user = req.user_payload;
 //'SELECT * FROM user_role WHERE id_user = $1 && id_role = 1'
-// }
+ }
+
+module.exports = {
+    checkToken,
+    checkTokenImage,
+    checkAdminRole
+}

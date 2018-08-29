@@ -2,10 +2,10 @@
 
 const express = require('express');
 const userController = require('../../controllers').user;
-const { ensureAuth } = require('../../middlewares/authenticated');
+const { checkToken } = require('../../middlewares/authenticated');
 var api = express.Router();
 
-api.get('/', ensureAuth, userController.getUsers);
+api.get('/', checkToken, userController.getUsers);
 api.get('/:userId', userController.getUserByUserId);
 api.post('/create', userController.createUser);
 api.put('/update/:userId', userController.updateUser);
