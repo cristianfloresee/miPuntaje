@@ -62,7 +62,7 @@ app.put('/upload/:fileType/:id', (req, res) => {
 
 async function userImage(id_user, res, file_name) {
     try {
-        const rows_search = (await pool('SELECT * FROM users WHERE id_user = $1', id_user)).rows;
+        const rows_search = (await pool.query('SELECT * FROM users WHERE id_user = $1', [id_user])).rows;
 
         if (rows_search.length == 0) {
             deleteFile(file_name, 'users')
@@ -72,7 +72,7 @@ async function userImage(id_user, res, file_name) {
             })
         }
         deleteFile(rows_search[0].profile_image, 'users')
-        const result = (await pool('UPDATE users SET profile_image = $1 WHERE id_user = $2', file_name, id_user)).rows;
+        const result = (await pool.query('UPDATE users SET profile_image = $1 WHERE id_user = $2', [file_name, id_user])).rows;
         res.json({
             message: 'imagen cargada en db correctamente'
         })
@@ -87,7 +87,7 @@ async function userImage(id_user, res, file_name) {
 
 async function questionImage(id_question, res, file_name){
     try {
-        const rows_search = (await pool('SELECT * FROM questions WHERE id_question = $1', id_question)).rows;
+        const rows_search = (await pool.query('SELECT * FROM questions WHERE id_question = $1', [id_question])).rows;
 
         if (rows_search.length == 0) {
             deleteFile(file_name, 'questions')
@@ -97,7 +97,7 @@ async function questionImage(id_question, res, file_name){
             })
         }
         deleteFile(rows_search[0].image, 'questions')
-        const result = (await pool('UPDATE questions SET image = $1 WHERE id_question = $2', file_name, id_question)).rows;
+        const result = (await pool.query('UPDATE questions SET image = $1 WHERE id_question = $2', [file_name, id_question])).rows;
         res.json({
             message: 'imagen cargada en db correctamente'
         })

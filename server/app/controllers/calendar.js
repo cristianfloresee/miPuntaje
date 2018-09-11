@@ -6,7 +6,7 @@ async function getCalendars(req, res) {
     try {
         const {
             rows
-        } = await pool('SELECT id_calendar, year, semester, created_at, updated_at FROM calendars');
+        } = await pool.query('SELECT id_calendar, year, semester, created_at, updated_at FROM calendars');
         res.json(rows)
     } catch (error) {
         res.status(500).json({
@@ -26,8 +26,8 @@ async function createCalendar(req, res) {
 
         if (name && hexadecimal) {
             const result_search = await Promise.all([
-                pool('SELECT id_color FROM colors WHERE name = $1', name),
-                pool('SELECT id_color FROM colors WHERE hexadecimal = $1', hexadecimal)
+                pool.query('SELECT id_color FROM colors WHERE name = $1', [name]),
+                pool.query('SELECT id_color FROM colors WHERE hexadecimal = $1', [hexadecimal])
             ]);
             const rows_name = result_search[0].rows;
             const rows_hexadecimal = result_search[1].rows;
@@ -47,7 +47,7 @@ async function createCalendar(req, res) {
                     message: 'this color hexadecimal has been taken'
                 })
             } else {
-                const { rows } = await pool('INSERT INTO colors(name, hexadecimal) VALUES($1, $2)', name, hexadecimal);
+                const { rows } = await pool.query('INSERT INTO colors(name, hexadecimal) VALUES($1, $2)', [name, hexadecimal]);
                 res.json({message: 'successfully created color'})
             }
         } else {
@@ -66,7 +66,7 @@ async function createCalendar(req, res) {
 
 async function updateCalendar(req, res) {
     try {
-        const { rows } = await pool('SELECT * FROM calendar');
+        const { rows } = await pool.query('SELECT * FROM calendar');
         res.json(rows)
     } catch (error) {
         console.log(`database ${error}`)
@@ -79,7 +79,7 @@ async function deleteCalendar(req, res) {
         const id_calendar = req.params.calendarId;
         const {
             rows
-        } = await pool('DELETE FROM calendars WHERE id_calendar = $1', id_calendar);
+        } = await pool.query('DELETE FROM calendars WHERE id_calendar = $1', [id_calendar]);
         res.json({
             message: 'successfully deleted calendar'
         });

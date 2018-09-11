@@ -6,7 +6,7 @@ async function getSubjects(req, res) {
     try {
         const {
             rows
-        } = await pool('SELECT * FROM subject');
+        } = await pool.query('SELECT * FROM subject');
         res.json(rows)
     } catch (err) {
         console.log(`database ${err}`)
@@ -20,7 +20,7 @@ async function setSubject(req, res) {
     try {
         const {
             rows
-        } = await pool('INSERT INTO subject (nombre_asignatura) VALUES (?)', [req.body.name]);
+        } = await pool.query('INSERT INTO subject (nombre_asignatura) VALUES (?)', [req.body.name]);
         //res.json(rows)
         res.json({
             'success': true,

@@ -11,7 +11,7 @@ async function getUsers(req, res) {
     try {
         const {
             rows
-        } = await pool('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at FROM users');
+        } = await pool.query('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at FROM users');
         res.json({
             user_payload: req.user_payload,
             users: rows
@@ -29,7 +29,7 @@ async function getUserByUserId(req, res) {
         var id_user = req.params.userId;
         const {
             rows
-        } = await pool('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at FROM users WHERE id_user = $1', id_user);
+        } = await pool.query('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at FROM users WHERE id_user = $1', [id_user]);
         res.json(rows)
     } catch (error) {
         res.status(500).json({
@@ -58,9 +58,9 @@ async function createUser(req, res) {
         if (name && last_name && middle_name && document_no && email && phone_no && username && active && password) {
             //COMPRUEBO QUE EL RUT,USERNAME E EMAIL NO EXISTAN  EN LA BASE DE DATOS user.rut.toLowerCase()
             const result_search = await Promise.all([
-                pool('SELECT id_user FROM users WHERE document_no = $1', document_no.toUpperCase()),
-                pool('SELECT id_user FROM users WHERE username = $1', username.toLowerCase()),
-                pool('SELECT id_user FROM users WHERE email = $1', email.toLowerCase()),
+                pool.query('SELECT id_user FROM users WHERE document_no = $1', [document_no.toUpperCase()]),
+                pool.query('SELECT id_user FROM users WHERE username = $1', [username.toLowerCase()]),
+                pool.query('SELECT id_user FROM users WHERE email = $1', [email.toLowerCase()]),
             ]);
 
             const rows_document_no = result_search[0].rows;
@@ -106,13 +106,12 @@ async function createUser(req, res) {
                     })
                 default:
                     let salt = bcrypt.genSaltSync(10);
-                    //  bcrypt.hash(password, null, null, (error, hash) => { password = hash });
+                    const text = 'INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, active, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)  RETURNING id_user';
+                    const values = [name, last_name, middle_name, document_no, email, phone_no, username, active, bcrypt.hashSync(password, salt)];
                     const {
                         rows
-                    } = await pool('INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, active, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)', name, last_name, middle_name, document_no, email, phone_no, username, active, bcrypt.hashSync(password, salt));
-                    //NECESITO QUE LA DB ME DEVUELVA AL MENOS EL ID DEL USUARIO CREADO PARA CREAR EL/LOS ROLES POR DEFECTO
-                    
-                    const roles = await pool('INSERT INTO user_role(id_user, id_role) VALUES($1, $2)','','1');
+                    } = await pool.query(text, values);
+                    const roles = await pool.query('INSERT INTO user_role(id_user, id_role) VALUES($1, $2)', [rows[0].id_user, '3']);
                     //GENERO EL TOKEN CON DATOS DE USUARIO Y ROLES
                     res.json({
                         message: 'successfully created user'
@@ -149,17 +148,17 @@ async function updateUser(req, res) {
             password
         } = req.body;
 
-         //BUSCA Y ACTUALIZA EN LA MISMA QUERY
-        if(id_user != req.user_payload.id_user){
-            return res.status(500)-json({
+        //BUSCA Y ACTUALIZA EN LA MISMA QUERY
+        if (id_user != req.user_payload.id_user) {
+            return res.status(500) - json({
                 success: false,
                 message: 'you do not have permission to update user data'
             })
         }
-       
+
         const {
             rows
-        } = await pool('UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9', name, last_name, middle_name, document_no, email, phone_no, username, active, id_user);
+        } = await pool.query('UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9', [name, last_name, middle_name, document_no, email, phone_no, username, active, id_user]);
 
         /*
                 res.status(200).send({
@@ -179,7 +178,7 @@ async function deleteUser(req, res) {
         const id_user = req.params.userId;
         const {
             rows
-        } = await pool('DELETE FROM users WHERE id_user = $1', id_user);
+        } = await pool.query('DELETE FROM users WHERE id_user = $1', [id_user]);
         res.json({
             message: 'successfully deleted user'
         });
@@ -197,7 +196,7 @@ async function disableUser(req, res) {
         const id_user = req.params.userId;
         const {
             rows
-        } = await pool('UPDATE users SET active = false WHERE id_user = $1', id_user);
+        } = await pool.query('UPDATE users SET active = false WHERE id_user = $1', [id_user]);
         res.json({
             message: 'successfully disabled user'
         });

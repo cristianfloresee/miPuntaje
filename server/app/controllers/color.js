@@ -40,7 +40,7 @@ async function getColorsByUserId(req, res) {
         const values = [id_user];
         const {
             rows
-        } = await pool(text, values);
+        } = await pool.query(text, values);
         res.json({
             success: true,
             colors: rows
@@ -176,7 +176,7 @@ async function deleteColor(req, res) {
         const values = [id_color];
         const {
             rows
-        } = await pool(text, values);
+        } = await pool.query(text, values);
         res.json({
             success: true,
             message: 'successfully deleted color'
