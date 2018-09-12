@@ -311,9 +311,7 @@ CREATE TABLE user_question_class
 -- Records of users
 -- ----------------------------
 INSERT INTO users (document_no, name, last_name, middle_name, email, phone_no, username, password)
-VALUES('18313961K', 'Cristian', 'Flores', 'Sandoval', 'cristianflores.ee@gmail.com', '+56971361021', 'admin1', 'admin1'),
-('172239210', 'Ricardo', 'Valdivia', 'Pinto', 'rvaldivia@gmail.com', '+56971361021', 'teacher1', 'teacher1'),
-('212236570', 'Sebastián', 'Lorca', 'Pinto', 'slorca@gmail.com', '+56971361021', 'student1', 'student1');
+VALUES('183139613', 'Cristian Andrés', 'Flores', 'Sandoval', 'demo@demo.com', '+56973234391', 'demo', '$2a$10$5DLMiodMYuNoEeeBQJrSp.yyiq2LEKlOqbK.ISXMPs.CrMk1cXTt2');
 
 -- ----------------------------
 -- Records of roles
@@ -325,7 +323,7 @@ VALUES ('administrador'), ('profesor'), ('estudiante');
 -- Records of user_role
 -- ----------------------------
 INSERT INTO user_role (id_user, id_role)
-VALUES (1,1),(2,2),(3,3);
+VALUES (1,1),(1,2),(1,3);
 
 -- ----------------------------
 -- Records of subjects
