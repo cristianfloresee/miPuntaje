@@ -57,7 +57,7 @@ npm install
 ```
 # 2. Ingresando al Sistema
 
-A continuación se encuentran los credenciales de acceso para testear el sistema.
+A continuación se encuentran los credenciales de acceso para testear el sistema. Este usuario tendrá acceso a los tres roles existentes (administrador, profesor y estudiante).
 
 ```
 email: demo@demo.com

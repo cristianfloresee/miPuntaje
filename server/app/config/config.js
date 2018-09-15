@@ -29,7 +29,7 @@ process.env.SEED = process.env.SEED || 'app-secret-seed';
 // host: ip del host de la base de datos. ip local es 'localhost' o 127.0.0.1
 // database: nombre de la base de datos
 // password: clave del usuario de la base de datos (vacío por defecto en postgres)
-// port: puerto de la base de datos (5432 es el puerto por defecto en postgres)
+// port: puerto de la base de datos (5432 puerto por defecto en postgres)
 const database = {
     'production': {
         user: 'fdbdasbdabs',

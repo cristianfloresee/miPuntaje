@@ -1,9 +1,3 @@
-// module.exports = (app) => {
-//     app.use('/colors', require('./routes/color'));
-//     app.use('/users', require('./routes/user'));
-//     app.use('/calendars', require('./routes/calendar'));
-// };
-
 const express = require('express');
 const app = express();
 

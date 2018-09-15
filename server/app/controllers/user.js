@@ -50,12 +50,11 @@ async function createUser(req, res) {
             email,
             phone_no,
             username,
-            active,
             profile_image,
             password
         } = req.body;
 
-        if (name && last_name && middle_name && document_no && email && phone_no && username && active && password) {
+        if (name && last_name && middle_name && document_no && email && phone_no && username && password) {
             //COMPRUEBO QUE EL RUT,USERNAME E EMAIL NO EXISTAN  EN LA BASE DE DATOS user.rut.toLowerCase()
             const result_search = await Promise.all([
                 pool.query('SELECT id_user FROM users WHERE document_no = $1', [document_no.toUpperCase()]),
@@ -106,8 +105,8 @@ async function createUser(req, res) {
                     })
                 default:
                     let salt = bcrypt.genSaltSync(10);
-                    const text = 'INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, active, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)  RETURNING id_user';
-                    const values = [name, last_name, middle_name, document_no, email, phone_no, username, active, bcrypt.hashSync(password, salt)];
+                    const text = 'INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8)  RETURNING id_user';
+                    const values = [name, last_name, middle_name, document_no, email, phone_no, username, bcrypt.hashSync(password, salt)];
                     const {
                         rows
                     } = await pool.query(text, values);
@@ -155,10 +154,11 @@ async function updateUser(req, res) {
                 message: 'you do not have permission to update user data'
             })
         }
-
+        const text = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9';
+        const values = [name, last_name, middle_name, document_no, email, phone_no, username, active, id_user];
         const {
             rows
-        } = await pool.query('UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9', [name, last_name, middle_name, document_no, email, phone_no, username, active, id_user]);
+        } = await pool.query(text, values);
 
         /*
                 res.status(200).send({
