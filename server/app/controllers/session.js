@@ -30,9 +30,8 @@ async function login(req, res) {
             })
         }
 
-        const roles = (await pool.query('SELECT id_role FROM user_role WHERE id_user = $1', [user.id_user])).rows;
-        user.roles = [];
-        for (let i = 0; i < roles.length; i++) user.roles.push(roles[i].id_role)
+        const roles = (await pool.query('SELECT ur.id_role, r.name FROM user_role AS ur INNER JOIN roles AS r ON ur.id_role = r.id_role WHERE ur.id_user = $1', [user.id_user])).rows;
+        user.roles = roles;
 
         delete user.password; //ELIMINA LA PASSWORD DEL OBJETO USUARIO
         let token = jwt.sign({

@@ -21,8 +21,9 @@ let checkToken = (req, res, next) => {
             })
         }
         req.user_payload = decoded.user;
+        next();
     })
-    next();
+
 }
 
 
@@ -33,7 +34,7 @@ let checkToken = (req, res, next) => {
 let checkTokenImage = (req, res, next) => {
 
     let token = req.query.authorization;
-    
+
     jwt.verify(token, process.env.SEED, (error, decoded) => {
         if (error) {
             return res.status(401).json({
@@ -49,10 +50,10 @@ let checkTokenImage = (req, res, next) => {
 // ============================
 // Verifica Role Administrador
 // ============================
- let checkAdminRole = (req, res, next) => {
-     let user = req.user_payload;
-//'SELECT * FROM user_role WHERE id_user = $1 && id_role = 1'
- }
+let checkAdminRole = (req, res, next) => {
+    let user = req.user_payload;
+    //'SELECT * FROM user_role WHERE id_user = $1 && id_role = 1'
+}
 
 module.exports = {
     checkToken,

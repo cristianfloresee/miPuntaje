@@ -132,6 +132,7 @@ async function createUser(req, res) {
 
 //SOLO PUEDE MODIFICAR USUARIO QUE VIENE EN SU TOKEN
 async function updateUser(req, res) {
+    console.log("entre a update user...");
     try {
         const id_user = req.params.userId;
         const {
@@ -142,33 +143,33 @@ async function updateUser(req, res) {
             email,
             phone_no,
             username,
-            active,
-            profile_image,
-            password
         } = req.body;
 
-        //BUSCA Y ACTUALIZA EN LA MISMA QUERY
         if (id_user != req.user_payload.id_user) {
             return res.status(500) - json({
                 success: false,
                 message: 'you do not have permission to update user data'
             })
         }
-        const text = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9';
-        const values = [name, last_name, middle_name, document_no, email, phone_no, username, active, id_user];
+        const text = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7 WHERE id_user = $8 RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
+        const values = [name, last_name, middle_name, document_no, email, phone_no, username, id_user];
         const {
             rows
         } = await pool.query(text, values);
+        const roles = (await pool.query('SELECT ur.id_role, r.name FROM user_role AS ur INNER JOIN roles AS r ON ur.id_role = r.id_role WHERE ur.id_user = $1', [id_user])).rows;
+        let user = rows[0];
+        user.roles = roles;
 
-        /*
-                res.status(200).send({
-                    color: rows
-                });*/
+        delete user.password;
+        res.json({
+            success: true,
+            user: user
+        })
     } catch (error) {
         console.log(`database ${error}`)
-        res.json({
+        res.status(500).json({
             success: false,
-            error
+            error: error
         });
     }
 }
