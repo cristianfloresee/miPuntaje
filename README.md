@@ -80,6 +80,7 @@ Postgres:
 
 ## Postman
 
+## Gitbook
 
 # Otras Útilidades
 Instalar nodemon:
@@ -90,4 +91,4 @@ npm install -g nodemon
 - ✨ Aprende más sobre este proyecto en [Gitbook](https://ngxs.gitbooks.io/ngxs/)
 - 🚀 Ve este proyecto en funcionamiento en [Stackblitz](https://stackblitz.com/edit/ngxs-simple)
 - 🗄  Ve las actualizaciones en [Changelog](CHANGELOG.md)
-- ❤️ Convertierte en un [Contribuidor](docs/community/contributors.md) o un [Sponsor](/docs/community/sponsors.md)
+- ❤️ Convertierte en [Contribuidor](docs/community/contributors.md) o [Sponsor](/docs/community/sponsors.md)

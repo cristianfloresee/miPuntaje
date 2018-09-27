@@ -30,15 +30,16 @@ async function login(req, res) {
             })
         }
 
-        const roles = (await pool.query('SELECT ur.id_role, r.name FROM user_role AS ur INNER JOIN roles AS r ON ur.id_role = r.id_role WHERE ur.id_user = $1', [user.id_user])).rows;
+        //const roles = (await pool.query('SELECT ur.id_role, r.name FROM user_role AS ur INNER JOIN roles AS r ON ur.id_role = r.id_role WHERE ur.id_user = $1', [user.id_user])).rows;
+        const roles = (await pool.query('SELECT id_role FROM user_role WHERE id_user = $1', [user.id_user])).rows.map(role => role.id_role);
         user.roles = roles;
 
         delete user.password; //ELIMINA LA PASSWORD DEL OBJETO USUARIO
         let token = jwt.sign({
             user: user
         }, process.env.SEED, {
-            expiresIn: process.env.TOKEN_EXPIRATION
-        });
+                expiresIn: process.env.TOKEN_EXPIRATION
+            });
 
         return res.json({
             success: true,
