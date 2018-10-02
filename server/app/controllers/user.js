@@ -9,12 +9,18 @@ const pool = require('../database/pool');
 
 async function getUsers(req, res) {
     try {
+
+        const from = Number(req.query.from || 0);
+        const limit = Number(req.query.page || 5);
         const {
             rows
-        } = await pool.query('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at FROM users');
+        } = await pool.query('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at, count(*) OVER() AS total_users FROM users ORDER BY id_user LIMIT $1 OFFSET $2', [limit, from * 5]);
+
+        const total = rows.length != 0 ? rows[0].total_users : 0;
         res.json({
             user_payload: req.user_payload,
-            users: rows
+            users: rows,
+            total
         })
     } catch (error) {
         res.status(500).json({
@@ -161,6 +167,8 @@ async function updateUser(req, res) {
         user.roles = roles;
 
         delete user.password;
+
+        //AGREGAR EMIT DE SOCKET
         res.json({
             success: true,
             user: user
