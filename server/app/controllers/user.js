@@ -11,10 +11,18 @@ async function getUsers(req, res) {
     try {
 
         const from = Number(req.query.from || 0);
-        const limit = Number(req.query.page || 5);
+        const limit = Number(req.query.limit);
+
+        //PARÁMETROS DE FILTRO OPCIONAL:
+        const search;
+
+        if(){
+
+        }
+        
         const {
             rows
-        } = await pool.query('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at, count(*) OVER() AS total_users FROM users ORDER BY id_user LIMIT $1 OFFSET $2', [limit, from * 5]);
+        } = await pool.query('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at, count(*) OVER() AS total_users FROM users ORDER BY id_user LIMIT $1 OFFSET $2', [limit, from]);
 
         const total = rows.length != 0 ? rows[0].total_users : 0;
         res.json({
