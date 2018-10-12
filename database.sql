@@ -42,7 +42,8 @@ CREATE TABLE calendars
 	semester SMALLINT NOT NULL,
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW(),
-	CONSTRAINT pk_calendar PRIMARY KEY (id_calendar)
+	CONSTRAINT pk_calendar PRIMARY KEY (id_calendar),
+	CONSTRAINT uq_calendar UNIQUE(year, semester)
 );
 
 -- ----------------------------
@@ -219,8 +220,8 @@ CREATE TABLE user_role
 	id_user INTEGER NOT NULL,
 	id_role INTEGER NOT NULL,
 	CONSTRAINT pk_user_role PRIMARY KEY (id_user, id_role),
-	CONSTRAINT fk_user_role__user FOREIGN KEY (id_user) REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE RESTRICT,
-	CONSTRAINT fk_user_role__role FOREIGN KEY (id_role) REFERENCES roles(id_role) ON UPDATE CASCADE ON DELETE RESTRICT
+	CONSTRAINT fk_user_role__user FOREIGN KEY (id_user) REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT fk_user_role__role FOREIGN KEY (id_role) REFERENCES roles(id_role) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- ----------------------------

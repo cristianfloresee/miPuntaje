@@ -7,9 +7,9 @@ var api = express.Router();
 
 api.get('/', calendarController.getCalendars);
 // api.get('/:userId', colorController.getColorsByUserId);
-// api.post('/create', colorController.createColor);
-// api.put('/update/:colorId', colorController.updateColor);
-// api.delete('/delete/:colorId', colorController.deleteColor);
-//api.get('/:userId/:page?', colorController.getColorsByUserId);
+api.post('/create', calendarController.createCalendar);
+api.put('/update/:calendarId', calendarController.updateCalendar);
+api.delete('/delete/:calendarId', calendarController.deleteCalendar);
+
 
 module.exports = api;
