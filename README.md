@@ -92,3 +92,7 @@ npm install -g nodemon
 - 🚀 Ve este proyecto en funcionamiento en [Stackblitz](https://stackblitz.com/edit/ngxs-simple)
 - 🗄  Ve las actualizaciones en [Changelog](CHANGELOG.md)
 - ❤️ Convertierte en [Contribuidor](docs/community/contributors.md) o [Sponsor](/docs/community/sponsors.md)
+
+# License
+
+MIT © [Cristian Flores Sandoval](https://github.com/cristianfloresee)
