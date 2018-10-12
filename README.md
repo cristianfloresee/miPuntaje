@@ -19,7 +19,7 @@
 + Instalar Angular.
 + Instalar Nodejs
 
-## 1.1 Instalar y Configurar Postgres
+# 📦 Instalación 📦
 
 Descargar e Instalar Postgres desde el siguiente enlace.
 ```
