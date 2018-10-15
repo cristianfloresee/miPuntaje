@@ -10,6 +10,7 @@ api.get('/', calendarController.getCalendars);
 api.post('/create', calendarController.createCalendar);
 api.put('/update/:calendarId', calendarController.updateCalendar);
 api.delete('/delete/:calendarId', calendarController.deleteCalendar);
+api.get('/count', calendarController.countCalendar);
 
 
 module.exports = api;

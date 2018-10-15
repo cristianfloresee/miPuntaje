@@ -2,32 +2,49 @@
 
 const pool = require('../database/pool');
 
+//FRAGMENTOS DE CONSULTA
+const CALENDARS = 'SELECT id_calendar, year, semester, created_at, updated_at, count(*) OVER() AS count FROM calendars';
+const CALENDARS_OPTIONS = `SELECT id_calendar, year, semester FROM calendars`;
+const PAGINATION = ' ORDER BY id_calendar LIMIT $1 OFFSET $2';
+
+
 async function getCalendars(req, res) {
     try {
-        const from = Number(req.query.from || 0);
-        const limit = Number(req.query.limit || 10);
-
-        //PARÁMETROS DE FILTRO OPCIONAL:
         const search = req.query.search;
+        const from = Number(req.query.from);
+        const limit = Number(req.query.limit);
 
-        //FRAGMENTOS DE CONSULTA
-        const SELECT = 'SELECT id_calendar, year, semester, created_at, updated_at, count(*) OVER() AS count FROM calendars';
-        const PAGINATION = 'ORDER BY id_calendar LIMIT $1 OFFSET $2';
+        let values, query;
+        let promises = [];
 
-        let query;
-        let values = [limit, from];
-
-        if (search) {
-            query = `${SELECT} WHERE year = $3 ${PAGINATION}`;
-            values.push(search);
+        if ((from != undefined) && limit) {
+            values = [limit, from];
+            query = CALENDARS;
+            if (search) {
+                query += ` WHERE name LIKE $3`;
+                values.push(`%${search}%`);
+            }
+            query += `${PAGINATION}`;
+            
+        console.log("query: ", query);
+        console.log("values: ", values);
+    
+            promises.push(pool.query(query, values));
         }
         else {
-            query = `${SELECT} ${PAGINATION}`
+            query = `${CALENDARS_OPTIONS} ORDER BY year, semester`;
+            promises.push(pool.query(query));
         }
 
-        const {
-            rows
-        } = await pool.query(query, values);
+ 
+        const  { rows } = (await Promise.all(promises))[0];
+
+        console.log("query: ", query);
+        console.log("values: ", values);
+        console.log("rows: ", rows)
+        // const {
+        //     rows
+        // } = await pool.query(query, values);
 
         const total = rows.length != 0 ? rows[0].count : 0;
 
@@ -115,11 +132,29 @@ async function deleteCalendar(req, res) {
     }
 }
 
+async function countCalendar(req, res) {
+    try {
+        const { rows } = await pool.query('SELECT count(*) AS count FROM calendars');
+        console.log(rows);
+        res.json({
+            result: rows[0].count
+        });
+    }
+    catch(error) {
+        console.log(`${error}`)
+        res.status(500).json({
+            success: false,
+            error
+        });
+    }
+}
+
 
 
 module.exports = {
     getCalendars,
     createCalendar,
     updateCalendar,
-    deleteCalendar
+    deleteCalendar,
+    countCalendar
 }

@@ -1,11 +1,38 @@
 'use strict'
 
+//LIBRERÍAS*************************************************************************************
 const bcrypt = require('bcrypt-nodejs');
-//const jwt = require('../services/jwt');
 const pool = require('../database/pool');
 
-//const valid_roles = {};
+//SEGMENTOS DE CONSULTA*************************************************************************
+const ROLES =
+    `SELECT id_user, array_agg(id_role ORDER BY id_role) AS roles
+    FROM user_role
+    GROUP BY id_user`;
 
+const ROLES_FILTER =
+    `SELECT id_user, array_agg(id_role ORDER BY id_role) AS roles 
+    FROM user_role 
+    GROUP BY id_user 
+    HAVING $3 = ANY(array_agg(id_role))
+    ORDER BY id_user`;
+
+const PAGINATION =
+    `ORDER BY id_user LIMIT $1 OFFSET $2`;
+
+const USERS_ROLES =
+    `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users 
+    FROM users AS u 
+    INNER JOIN (${ROLES}) AS r 
+    ON u.id_user = r.id_user`;
+
+const USERS_ROLES_WFILTER =
+    `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users 
+    FROM users AS u 
+    INNER JOIN (${ROLES_FILTER}) AS r 
+    ON u.id_user = r.id_user`;
+
+//FUNCIONES************************************************************************************
 async function getUsers(req, res) {
     try {
         const from = Number(req.query.from || 0);
@@ -16,78 +43,42 @@ async function getUsers(req, res) {
         const role = Number(req.query.role);
         const status = req.query.status;
 
-        //SEGMENTOS CONSULTA
-        const SELECT = 'SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at, count(*) OVER() AS total_users FROM users AS u';
-        const PAGINATION = 'ORDER BY id_user LIMIT $1 OFFSET $2';
         let values = [limit, from];
         let query;
 
-        if (role && status && search) {
-            query = `${SELECT} WHERE roles = $3 AND active = $4 AND CONCAT(u.name, ' ', u.last_name, ' ', u.middle_name) LIKE %$5% ${PAGINATION}`;
-            values = [...values, role, status, `%${search}%`];
-        }
-        else if (role && status) {
-            query = `${SELECT} WHERE roles = $3 AND active = $4 ${PAGINATION}`;
-            values = [...values, role, status];
-        }
-        else if (role && search) {
-            query = `${SELECT} WHERE roles = $3 AND CONCAT(u.name, ' ', u.last_name, ' ', u.middle_name) LIKE $4 ${PAGINATION}`;
-            values = [...values, role, `%${search}%`];
-        }
-        else if (status && search) {
-            query = `${SELECT} WHERE active = $3 AND CONCAT(u.name, ' ', u.last_name, ' ', u.middle_name) LIKE $4 ${PAGINATION}`;
-            values = [...values, status, `%${search}%`];
-        }
-        else if (search) {
-            //SI TIENE @ ENTONCES ES CORREO ELECTRÓNICO
-            if (/[0-9a-zA-Z_.-]*@[0-9a-zA-Z]*.?[a-z]*/.test(search)) {
-                console.log("EMAIL...");
-                query = `${SELECT} WHERE email LIKE $3 ${PAGINATION}`;
-                values = [...values, `%${search}%`];
-            }
-            //SI ES SOLO NUMERO ENTONCES ES RUT
-            else if (/[0-9]+/.test(search)) {
-                console.log("ENTRA A RUT...");
-                query = `${SELECT} WHERE document_no LIKE $3 ${PAGINATION}`;
-                values = [...values, `${search}%`];
-            }
-            //SI TIENE 2 O 3 PALABRAS ENTONCES ES NOMBRE
-            else if (/([a-zA-Z]+( [a-zA-Z]+){1,2})/.test(search)) {
-                ({ query, values } = searchName(SELECT, PAGINATION, search, values));
-            }
-            //SI TIENE LETRAS, NÚMEROS Y CARÁCTERES ESPECIALES ES USUARIO
-            else if (/[0-9a-zA-Z-_.]+[-_.]+[0-9a-zA-Z]*/.test(search)) {
-                console.log("ENTRA A USER...");
-                query = `${SELECT} WHERE username LIKE $3 ${PAGINATION}`;
-                values = [...values, `%${search}%`];
-            }
-            //SI TIENE LETRAS Y NÚMEROS ES USUARIO O RUT
-            else if (/[0-9a-zA-Z-_.]+[0-9]+[0-9a-zA-Z]*/.test(search)) {
-                console.log("ENTRA A USER Y RUT...");
-                query = `${SELECT} WHERE username LIKE $3 OR document_no LIKE $3 ${PAGINATION}`;
-                values = [...values, `%${search}%`];
-            }
-            //POR DEFECTO BUSCA SOLO EN NOMBRE
-            else {
-                ({ query, values } = searchName(SELECT, PAGINATION, search, values));
-            }
-        }
-        else if (role) {
-            //query = `${SELECT} WHERE u.id_user roles = $3 ${PAGINATION}`;
-            //query = `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users  FROM users AS u INNER JOIN (SELECT id_user, array_agg(id_role) AS roles FROM user_role GROUP BY id_user) AS r ON u.id_user = r.id_user WHERE u ${PAGINATION}`;
-            query = `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users  FROM users AS u INNER JOIN (SELECT id_user, array_agg(id_role ORDER BY id_role) AS roles FROM user_role WHERE id_user IN (SELECT id_user FROM user_role WHERE id_role = $3) GROUP BY id_user ORDER BY id_user) AS r ON u.id_user = r.id_user ${PAGINATION}`;
+        //********************************************************************************************************************************************************* */     
+
+        //SABER SI PONER EL AND EN EL WHERE
+        if (role) {
+            query = `${USERS_ROLES_WFILTER}`;
             values.push(role);
         }
-        else if (status) {
-            query = `${SELECT} WHERE active = $3 ${PAGINATION}`;
+        else query = `${USERS_ROLES}`;
+        console.log("role...")
+
+        if (status || search) query += ` WHERE `;
+
+        if (status) {
+            query += `u.active = $${values.length + 1}`;
             values.push(status);
-        }
-        else {
-            query = `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users  FROM users AS u INNER JOIN (SELECT id_user, array_agg(id_role) AS roles FROM user_role GROUP BY id_user) AS r ON u.id_user = r.id_user ${PAGINATION}`;
+            console.log("status...");
         }
 
-        //console.log("QUERY: ", query);
-        //console.log("VALUE: ", values);
+
+        if (search) {
+            let { mquery, mvalues } = searchAnything(search, values.length + 1);
+            query += status ? ` AND ${mquery}` : mquery;
+            values = [...values, ...mvalues];
+            console.log("search...");
+        }
+
+
+        //********************************************************************************************************************************************************* */
+
+        query += ` ${PAGINATION}`;
+
+        console.log("QUERY: ", query);
+        console.log("VALUE: ", values);
         const {
             rows
         } = await pool.query(query, values);
@@ -101,7 +92,7 @@ async function getUsers(req, res) {
     } catch (error) {
         console.log("ERROR: ", error);
         res.status(500).json({
-            message: 'error in obtaining users',
+            message: 'error in obtaining users1',
             error
         });
     }
@@ -116,7 +107,7 @@ async function getUserByUserId(req, res) {
         res.json(rows)
     } catch (error) {
         res.status(500).json({
-            message: 'error in obtaining users',
+            message: 'error in obtaining users2',
             error
         });
     }
@@ -360,25 +351,79 @@ async function getStudentsByCourse() {
 }
 
 
-function searchName(SELECT, PAGINATION, search, values) {
 
-    let query;
-    let array_search = search.split(' ');
+//FUNCIONES NO EXPORTABLES************************************************************************************
+
+function searchName(search_value, index) {
+
+    let mquery, mvalues;
+    let array_search = search_value.split(' ');
 
     if (array_search.length == 2) {
-        query = `${SELECT} WHERE (u.name = $3 OR u.last_name = $3) AND (u.last_name LIKE $4 OR u.middle_name LIKE $4) ${PAGINATION}`;
-        values = [...values, `${array_search[0]}`, `%${array_search[1]}%`]
+        mquery = `(u.name = $${index} OR u.last_name = $${index}) AND (u.last_name LIKE $${index + 1} OR u.middle_name LIKE $${index + 1})`;
+        mvalues = [`${array_search[0]}`, `%${array_search[1]}%`]
     }
     else if (array_search.length == 3) {
-        query = `${SELECT} WHERE u.name = $3 AND u.last_name = $4 AND u.middle_name LIKE $5 ${PAGINATION}`;
-        values = [...values, `${array_search[0]}`, `${array_search[1]}`, `%${array_search[2]}%`]
+        mquery = `u.name = $${index} AND u.last_name = $${index + 1} AND u.middle_name LIKE $${index + 2}`;
+        mvalues = [`${array_search[0]}`, `${array_search[1]}`, `%${array_search[2]}%`]
     }
     else {   //EXCELENTE: PARA CUANDO SEA 1 STRING O MAS DE 3
-        query = `${SELECT} WHERE CONCAT(u.name, ' ', u.last_name, ' ', u.middle_name) LIKE $3 ${PAGINATION}`;
-        values.push(`%${array_search[0]}%`);
+        mquery = `CONCAT(u.name, ' ', u.last_name, ' ', u.middle_name) LIKE $${index}`;
+        mvalues = [`%${array_search[0]}%`];
     }
 
-    return { query, values }
+    return { mquery, mvalues }
+}
+
+function searchAnything(search_value, index) {
+    let mquery, mvalues;
+    if (/^[0-9a-zA-Z_.-]*@[0-9a-zA-Z]*.?[a-z]*$/.test(search_value)) {
+        mquery = `email LIKE $${index}`;
+        mvalues = [`%${search_value}%`];
+    }
+    //SI ES "SOLO" NUMERO ENTONCES ES RUT
+    else if (/^[0-9]+$/.test(search_value)) {
+        mquery = `document_no LIKE $${index}`;
+        mvalues = [`${search_value}%`];
+    }
+    //SI TIENE 2 O 3 PALABRAS ENTONCES ES NOMBRE
+    else if (/^([a-zA-Z]+( [a-zA-Z]+){1,2}$)/.test(search_value)) {
+        ({ mquery, mvalues } = searchName(search_value, index));
+    }
+    //SI TIENE LETRAS, NÚMEROS Y CARÁCTERES ESPECIALES ES USUARIO
+    else if (/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[-_.])/.test(search_value)) {//ESTOY DICIENDO SI TIENE SOLAMENTE LETRAS O NUMEROS PERO NO OBLIGO A QUE TENGA AMBAS (DIGO LETRAS, NUMEROS "O" CARACTERES EPSECIALES)
+        mquery = `username LIKE $${index}`;
+        mvalues = [`%${search_value}%`];
+    }
+    //SI TIENE LETRAS Y NÚMEROS ES USUARIO O RUT (WARN: el rut lo puede buscar con punto y guion)
+    else if (/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(search_value)) {
+        mquery = `(username LIKE $${index} OR document_no LIKE $${index})`;
+        mvalues = [`%${search_value}%`];
+    }
+    //POR DEFECTO BUSCA SOLO EN NOMBRE
+    else {
+        ({ mquery, mvalues } = searchName(search_value, index));
+    }
+
+    return { mquery, mvalues }
+}
+
+async function countUser(req, res) {
+    try {
+        console.log("COUNT USER...");
+        const { rows } = await pool.query('SELECT count(*) AS count FROM users');
+        console.log(rows);
+        res.json({
+            result: rows[0].count
+        });
+    }
+    catch(error) {
+        console.log(`${error}`)
+        res.status(500).json({
+            success: false,
+            error
+        });
+    }
 }
 
 module.exports = {
@@ -387,5 +432,6 @@ module.exports = {
     createUser,
     updateUser,
     deleteUser,
-    disableUser
+    disableUser,
+    countUser
 }
