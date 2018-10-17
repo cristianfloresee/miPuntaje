@@ -410,9 +410,7 @@ function searchAnything(search_value, index) {
 
 async function countUser(req, res) {
     try {
-        console.log("COUNT USER...");
         const { rows } = await pool.query('SELECT count(*) AS count FROM users');
-        console.log(rows);
         res.json({
             result: rows[0].count
         });

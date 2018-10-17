@@ -35,9 +35,9 @@ async function getSubjects(req, res) {
 
         const  { rows }  = (await Promise.all(promises))[0];
 
-        console.log("query: ", query);
-        console.log("values: ", values);
-        console.log("rows: ", rows)
+        // console.log("query: ", query);
+        // console.log("values: ", values);
+        // console.log("rows: ", rows)
         // const {
         //     rows
         // } = await pool.query(query, values);

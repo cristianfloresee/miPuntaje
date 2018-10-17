@@ -10,6 +10,7 @@ const PAGINATION = ' ORDER BY id_calendar LIMIT $1 OFFSET $2';
 
 async function getCalendars(req, res) {
     try {
+        console.log("getCalendars...");
         const search = req.query.search;
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
@@ -21,8 +22,8 @@ async function getCalendars(req, res) {
             values = [limit, from];
             query = CALENDARS;
             if (search) {
-                query += ` WHERE name LIKE $3`;
-                values.push(`%${search}%`);
+                query += ` WHERE year = $3`;
+                values.push(`${search}`);
             }
             query += `${PAGINATION}`;
             
@@ -39,16 +40,16 @@ async function getCalendars(req, res) {
  
         const  { rows } = (await Promise.all(promises))[0];
 
-        console.log("query: ", query);
-        console.log("values: ", values);
-        console.log("rows: ", rows)
+        // console.log("query: ", query);
+        // console.log("values: ", values);
+        // console.log("rows: ", rows)
         // const {
         //     rows
         // } = await pool.query(query, values);
 
         const total = rows.length != 0 ? rows[0].count : 0;
 
-        console.log("ROW: ", rows);
+        //console.log("ROW: ", rows);
         res.json({
             total,
             results: rows
