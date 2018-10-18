@@ -193,6 +193,7 @@ CREATE TABLE questions
 	id_question SERIAL,
 	id_subcategory INTEGER NOT NULL,
 	description VARCHAR(30) NOT NULL,
+	difficulty SMALLINT NOT NULL,
 	shared BOOLEAN DEFAULT FALSE,
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW(),
@@ -264,19 +265,6 @@ CREATE TABLE user_subject_color
 	CONSTRAINT fk_user_subject_color__user FOREIGN KEY (id_user) REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE RESTRICT,
 	CONSTRAINT fk_user_subject_color__subject FOREIGN KEY (id_subject) REFERENCES subjects(id_subject) ON UPDATE CASCADE ON DELETE RESTRICT,
 	CONSTRAINT fk_user_subject_color__color FOREIGN KEY (id_color) REFERENCES colors (id_color) ON UPDATE CASCADE ON DELETE RESTRICT
-);
-
--- ----------------------------
--- Table structure for question_difficulty
--- ----------------------------
-DROP TABLE IF EXISTS question_difficulty;
-CREATE TABLE question_difficulty
-(
-	id_question INTEGER NOT NULL,
-	id_difficulty SMALLINT NOT NULL,
-	CONSTRAINT pk_question_difficulty PRIMARY KEY (id_question, id_difficulty),
-	CONSTRAINT fk_question_difficulty__question FOREIGN KEY (id_question) REFERENCES questions(id_question),
-	CONSTRAINT fk_question_difficulty__difficulty FOREIGN KEY (id_difficulty) REFERENCES difficulties(id_difficulty)
 );
 
 -- ----------------------------

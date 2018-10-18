@@ -4,6 +4,8 @@
 const bcrypt = require('bcrypt-nodejs');
 const pool = require('../database/pool');
 
+
+
 //SEGMENTOS DE CONSULTA*************************************************************************
 const ROLES =
     `SELECT id_user, array_agg(id_role ORDER BY id_role) AS roles
@@ -52,8 +54,7 @@ async function getUsers(req, res) {
         if (role) {
             query = `${USERS_ROLES_WFILTER}`;
             values.push(role);
-        }
-        else query = `${USERS_ROLES}`;
+        } else query = `${USERS_ROLES}`;
         console.log("role...")
 
         if (status || search) query += ` WHERE `;
@@ -66,7 +67,10 @@ async function getUsers(req, res) {
 
 
         if (search) {
-            let { mquery, mvalues } = searchAnything(search, values.length + 1);
+            let {
+                mquery,
+                mvalues
+            } = searchAnything(search, values.length + 1);
             query += status ? ` AND ${mquery}` : mquery;
             values = [...values, ...mvalues];
             console.log("search...");
@@ -210,8 +214,9 @@ async function createUser(req, res) {
 
 
 
-//SI ES DUEÑO DEL PERFIL / SI ES ADMIN
 async function updateUser(req, res) {
+
+    const client = await pool.pool.connect();
 
     try {
         const id_user = req.params.userId;
@@ -228,27 +233,29 @@ async function updateUser(req, res) {
             delete_roles
         } = req.body;
 
-        let user; //VAR DONDE SE ALOJARA EL USUARIO
+        let user;
+
+
         if (req.user_payload.roles.includes(1)) { //SI SOY ADMIN: PUEDO MODIFICAR EL ACTIVE Y LOS ROLES
-            //MODIFICAR ROLES //EN ROLES VIENEN LAS QUE SE INSERTARAN O ELIMINARAN
+
             let q_update_us = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9 RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
             let v_update_us = [name, last_name, middle_name, document_no, email, phone_no, username, active, id_user];
 
             let promises = [];
-            promises.push(pool.query(q_update_us, v_update_us));
+            promises.push(client.query('BEGIN'));
+            promises.push(client.query(q_update_us, v_update_us));
 
-            if (add_roles.length != 0) {
+            if (add_roles && add_roles.length != 0) {
                 let q_add_ro = 'INSERT INTO user_role (id_user, id_role) VALUES ';
                 let v_add_ro = [];
                 add_roles.map((role, index) => {
-                    //q_add_ro += `(${id_user},${role}),`; //CONSULTA DIRECTA...
                     q_add_ro += `($${index * 2 + 1},$${index * 2 + 2}),`;
                     v_add_ro.push(...[id_user, role])
                 })
                 q_add_ro = q_add_ro.slice(0, -1);
-                promises.push(pool.query(q_add_ro, v_add_ro));
+                promises.push(client.query(q_add_ro, v_add_ro));
             }
-            if (delete_roles.length != 0) {
+            if (delete_roles && delete_roles.length != 0) {
                 let q_delete_ro = 'DELETE FROM user_role WHERE (id_user, id_role) IN (';
                 let v_delete_ro = [];
                 delete_roles.map((role, index) => {
@@ -256,24 +263,27 @@ async function updateUser(req, res) {
                     v_delete_ro.push(...[id_user, role])
                 })
                 q_delete_ro = `${q_delete_ro.slice(0, -1)})`;
-                promises.push(pool.query(q_delete_ro, v_delete_ro));
+                promises.push(client.query(q_delete_ro, v_delete_ro));
             }
 
             const result_update = await Promise.all(promises);
-            user = result_update[0].rows[0];
-        }
-        else if (id_user != req.user_payload.id_user) { //SI SOY DUEÑO DEL ID
+            await client.query('COMMIT')
+
+            user = result_update[1].rows[0];
+        } else if (id_user != req.user_payload.id_user) { //SI SOY DUEÑO DEL ID
             let text = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7 WHERE id_user = $8 RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
             let values = [name, last_name, middle_name, document_no, email, phone_no, username, id_user];
 
             user = await pool.query(text, values);
-        }
-        else {
+        } else {
             return res.status(500).json({
                 success: false,
                 message: `you don't have permission to update user data`
             })
         }
+
+
+
         //BIEN: RECUPERO ROLES, QUITO LA CONTRASEÑA Y ENVIO RESPONSE...
         const _roles = (await pool.query('SELECT array_agg(id_role ORDER BY id_role) AS roles FROM user_role WHERE id_user = $1', [id_user])).rows;
         user.roles = _roles[0].roles;
@@ -285,11 +295,14 @@ async function updateUser(req, res) {
         })
 
     } catch (error) {
+        await client.query('ROLLBACK');
         console.log(`error: ${error}`)
         res.status(500).json({
             success: false,
             error: error
         });
+    } finally {
+        client.release();
     }
 }
 
@@ -305,10 +318,7 @@ async function deleteUser(req, res) {
         });
     } catch (error) {
         console.log(`database ${error}`)
-        res.json({
-            success: false,
-            error
-        });
+        res.status(204).send()
     }
 }
 
@@ -347,8 +357,7 @@ async function disableUser(req, res) {
 // }
 
 
-async function getStudentsByCourse() {
-}
+async function getStudentsByCourse() {}
 
 
 
@@ -362,17 +371,18 @@ function searchName(search_value, index) {
     if (array_search.length == 2) {
         mquery = `(u.name = $${index} OR u.last_name = $${index}) AND (u.last_name LIKE $${index + 1} OR u.middle_name LIKE $${index + 1})`;
         mvalues = [`${array_search[0]}`, `%${array_search[1]}%`]
-    }
-    else if (array_search.length == 3) {
+    } else if (array_search.length == 3) {
         mquery = `u.name = $${index} AND u.last_name = $${index + 1} AND u.middle_name LIKE $${index + 2}`;
         mvalues = [`${array_search[0]}`, `${array_search[1]}`, `%${array_search[2]}%`]
-    }
-    else {   //EXCELENTE: PARA CUANDO SEA 1 STRING O MAS DE 3
+    } else { //EXCELENTE: PARA CUANDO SEA 1 STRING O MAS DE 3
         mquery = `CONCAT(u.name, ' ', u.last_name, ' ', u.middle_name) LIKE $${index}`;
         mvalues = [`%${array_search[0]}%`];
     }
 
-    return { mquery, mvalues }
+    return {
+        mquery,
+        mvalues
+    }
 }
 
 function searchAnything(search_value, index) {
@@ -388,10 +398,13 @@ function searchAnything(search_value, index) {
     }
     //SI TIENE 2 O 3 PALABRAS ENTONCES ES NOMBRE
     else if (/^([a-zA-Z]+( [a-zA-Z]+){1,2}$)/.test(search_value)) {
-        ({ mquery, mvalues } = searchName(search_value, index));
+        ({
+            mquery,
+            mvalues
+        } = searchName(search_value, index));
     }
     //SI TIENE LETRAS, NÚMEROS Y CARÁCTERES ESPECIALES ES USUARIO
-    else if (/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[-_.])/.test(search_value)) {//ESTOY DICIENDO SI TIENE SOLAMENTE LETRAS O NUMEROS PERO NO OBLIGO A QUE TENGA AMBAS (DIGO LETRAS, NUMEROS "O" CARACTERES EPSECIALES)
+    else if (/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[-_.])/.test(search_value)) { //ESTOY DICIENDO SI TIENE SOLAMENTE LETRAS O NUMEROS PERO NO OBLIGO A QUE TENGA AMBAS (DIGO LETRAS, NUMEROS "O" CARACTERES EPSECIALES)
         mquery = `username LIKE $${index}`;
         mvalues = [`%${search_value}%`];
     }
@@ -402,20 +415,27 @@ function searchAnything(search_value, index) {
     }
     //POR DEFECTO BUSCA SOLO EN NOMBRE
     else {
-        ({ mquery, mvalues } = searchName(search_value, index));
+        ({
+            mquery,
+            mvalues
+        } = searchName(search_value, index));
     }
 
-    return { mquery, mvalues }
+    return {
+        mquery,
+        mvalues
+    }
 }
 
 async function countUser(req, res) {
     try {
-        const { rows } = await pool.query('SELECT count(*) AS count FROM users');
+        const {
+            rows
+        } = await pool.query('SELECT count(*) AS count FROM users');
         res.json({
             result: rows[0].count
         });
-    }
-    catch(error) {
+    } catch (error) {
         console.log(`${error}`)
         res.status(500).json({
             success: false,

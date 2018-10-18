@@ -10,7 +10,6 @@ const PAGINATION = ' ORDER BY id_calendar LIMIT $1 OFFSET $2';
 
 async function getCalendars(req, res) {
     try {
-        console.log("getCalendars...");
         const search = req.query.search;
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
