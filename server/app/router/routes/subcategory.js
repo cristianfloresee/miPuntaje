@@ -1,15 +1,15 @@
 'use strict'
 
 const express = require('express');
-const categoryController = require('../../controllers').category;
+const subcategoryController = require('../../controllers').subcategory;
 
 var api = express.Router();
 
-api.get('/', categoryController.getCategories);
+//api.get('/', categoryController.getSubcategories);
 //api.get('/:userId', colorController.getColorsByUserId);
-api.post('/create', categoryController.createCategory);
+api.post('/create', subcategoryController.createSubcategory);
 //api.put('/update/:categoryId', categoryController.updateCategory);
-api.delete('/delete/:categoryId', categoryController.deleteCategory);
+api.delete('/delete/:subcategoryId', subcategoryController.deleteSubcategory);
 //api.get('/count', categoryController.countCategory);
 
 

@@ -3,13 +3,13 @@
 const pool = require('../database/pool');
 
 //FRAGMENTOS DE CONSULTA
-const CATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
-const CATEGORIES_OPTIONS = `SELECT id_category, name FROM categories`;
+//const SUBCATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
+//const SUBCATEGORIES_OPTIONS = `SELECT id_category, name FROM categories`;
 const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
 
 
 
-async function getCategories(req, res) {
+async function getSubcategories(req, res) {
 
     try {
         const subject = req.params.subject;
@@ -63,20 +63,19 @@ async function getCategories(req, res) {
     }
 }
 
-async function createCategory(req, res) {
+async function createSubcategory(req, res) {
 
     try {
         const {
-            id_user,
-            id_subject,
+            id_category,
             name
         } = req.body;
 
-        if (id_user && id_subject && name) {
+        if (id_category && name) {
 
             const {
                 rows
-            } = await pool.query('INSERT INTO categories(id_user, id_subject, name) VALUES($1, $2, $3)', [id_user, id_subject, name]);
+            } = await pool.query('INSERT INTO subcategories(id_category, name) VALUES($1, $2)', [id_category, name]);
             res.status(201).send(rows[0])
         } else {
             res.status(400).json({
@@ -95,11 +94,11 @@ async function createCategory(req, res) {
 }
 
 
-async function deleteCategory(req, res) {
+async function deleteSubcategory(req, res) {
     try {
-        const id_category = req.params.categoryId;
+        const id_subcategory = req.params.subcategoryId;
 
-        const { rows } = await pool.query('DELETE FROM categories WHERE id_category = $1', [id_category]);
+        const { rows } = await pool.query('DELETE FROM subcategories WHERE id_subcategory = $1', [id_subcategory]);
         res.status(204).send();
 
     } catch (error) {
@@ -113,7 +112,6 @@ async function deleteCategory(req, res) {
 
 
 module.exports = {
-    getCategories,
-    createCategory,
-    deleteCategory
+    createSubcategory,
+    deleteSubcategory
 }
