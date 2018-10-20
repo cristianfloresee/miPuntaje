@@ -3,37 +3,43 @@
 const pool = require('../database/pool');
 
 //FRAGMENTOS DE CONSULTA
-const CATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
-const CATEGORIES_OPTIONS = `SELECT id_category, name FROM categories`;
+//const SUBCATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
+const SUBCATEGORY_OPTIONS = `SELECT id_subcategory, name FROM subcategories`;
 const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
 
 
 
-async function getCategories(req, res) {
+async function getSubcategories(req, res) {
 
     try {
         const subject = req.params.subject;
-        const teacher_options = req.params.teacher_options;
+        const teacher = req.params.teacher;
         const search = req.query.search;
+        const category_options = req.query.category_options;
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
 
         let values, query;
 
-        if(teacher_options){
-            const query = `${CATEGORIES_OPTIONS} WHERE id_user = $1 ORDER BY name`;
-            const values = [teacher_options]
+        if(category_options){
+            const query = `${SUBCATEGORY_OPTIONS} WHERE id_category = $1 ORDER BY name`;
+            const values = [category_options]
             const { rows } = await pool.query(query, values);
-            return res.send(rows[0])
+            return res.send(rows)
         }
-        else if ((from != undefined) && limit) {
+
+        if ((from != undefined) && limit) {
             query = CATEGORIES;
             values = [limit, from];
 
-            if (subject || search) query += ` WHERE `;
+            if (subject || teacher || search) query += ` WHERE `;
             if (subject) {
                 query += `id_subject = $${values.length + 1}`;
                 values.push(`${subject}`);
+            }
+            if (teacher) {
+                query += `id_user = $${values.length + 1}`;
+                values.push(`${teacher}`);
             }
             if (search) {
                 query += `name = $${values.length + 1}`;
@@ -41,8 +47,7 @@ async function getCategories(req, res) {
             }
             query += `${PAGINATION}`;
 
-        } 
-        else {
+        } else {
             query = `${CATEGORIES_OPTIONS} ORDER BY name`;
         } 
         
@@ -66,20 +71,20 @@ async function getCategories(req, res) {
     }
 }
 
-async function createCategory(req, res) {
+async function createQuestion(req, res) {
 
     try {
         const {
-            id_user,
-            id_subject,
-            name
+            id_subcategory,
+            description,    
+            difficulty
         } = req.body;
 
-        if (id_user && id_subject && name) {
+        if (id_subcategory && description && difficulty) {
 
             const {
                 rows
-            } = await pool.query('INSERT INTO categories(id_user, id_subject, name) VALUES($1, $2, $3)', [id_user, id_subject, name]);
+            } = await pool.query('INSERT INTO questions(id_subcategory, description, difficulty) VALUES($1, $2, $3)', [id_subcategory, description, difficulty]);
             res.status(201).send(rows[0])
         } else {
             res.status(400).json({
@@ -98,11 +103,11 @@ async function createCategory(req, res) {
 }
 
 
-async function deleteCategory(req, res) {
+async function deleteSubcategory(req, res) {
     try {
-        const id_category = req.params.categoryId;
+        const id_subcategory = req.params.subcategoryId;
 
-        const { rows } = await pool.query('DELETE FROM categories WHERE id_category = $1', [id_category]);
+        const { rows } = await pool.query('DELETE FROM subcategories WHERE id_subcategory = $1', [id_subcategory]);
         res.status(204).send();
 
     } catch (error) {
@@ -116,7 +121,6 @@ async function deleteCategory(req, res) {
 
 
 module.exports = {
-    getCategories,
-    createCategory,
-    deleteCategory
+
+    createQuestion,
 }

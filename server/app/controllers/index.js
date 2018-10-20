@@ -6,6 +6,7 @@ const subcategory = require('./subcategory');
 const sesion = require('./session');
 const subject = require('./subject');
 const course = require('./course');
+const question = require('./question');
 
 module.exports = {
     user,
@@ -15,5 +16,6 @@ module.exports = {
     subcategory,
     course,
     sesion,
-    subject
+    subject,
+    question
 };

@@ -4,7 +4,7 @@ const pool = require('../database/pool');
 
 //FRAGMENTOS DE CONSULTA
 //const SUBCATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
-//const SUBCATEGORIES_OPTIONS = `SELECT id_category, name FROM categories`;
+const SUBCATEGORY_OPTIONS = `SELECT id_subcategory, name FROM subcategories`;
 const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
 
 
@@ -15,10 +15,18 @@ async function getSubcategories(req, res) {
         const subject = req.params.subject;
         const teacher = req.params.teacher;
         const search = req.query.search;
+        const category_options = req.query.category_options;
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
 
         let values, query;
+
+        if(category_options){
+            const query = `${SUBCATEGORY_OPTIONS} WHERE id_category = $1 ORDER BY name`;
+            const values = [category_options]
+            const { rows } = await pool.query(query, values);
+            return res.send(rows)
+        }
 
         if ((from != undefined) && limit) {
             query = CATEGORIES;
@@ -112,6 +120,7 @@ async function deleteSubcategory(req, res) {
 
 
 module.exports = {
+    getSubcategories,
     createSubcategory,
     deleteSubcategory
 }
