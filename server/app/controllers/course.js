@@ -8,7 +8,7 @@ async function createCourse(req, res) {
         const { id_calendar, id_user, id_subject, name, course_goal, student_goal } = req.body;
 
         if (id_calendar && id_user && id_subject && name && course_goal && student_goal) {
-            const { rows } = await pool.query('INSERT INTO courses(id_calendar, id_user, id_subject, name, course_goal, student_goal) VALUES($1, $2, $3, $4, $5, $6)', [id_calendar, id_user, id_subject, name, course_goal, student_goal]);
+            const { rows } = await pool.query('INSERT INTO courses(id_calendar, id_user, id_subject, name, course_goal, student_goal, code) VALUES($1, $2, $3, $4, $5, $6, LEFT(uuid_generate_v4()::text, 8))', [id_calendar, id_user, id_subject, name, course_goal, student_goal]);;
             res.json({ message: 'successfully created calendar' })
         } else {
             res.status(400).json({
