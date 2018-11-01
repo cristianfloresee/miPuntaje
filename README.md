@@ -19,7 +19,7 @@ https://www.wlaurance.coms
 + Instalar Angular.
 + Instalar Nodejs
 
-# 📦 Instalación 📦
+# 1. Instalación 📦
 
 Descargar e Instalar Postgres desde el siguiente enlace.
 ```
@@ -55,7 +55,7 @@ Instalar dependendencias
 ```
 npm install
 ```
-# 2. Ingresando al Sistema
+# 2. Uso 🚀
 
 A continuación se encuentran los credenciales de acceso para testear el sistema. Este usuario tendrá acceso a los tres roles existentes (administrador, profesor y estudiante).
 

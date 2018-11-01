@@ -121,7 +121,12 @@ async function createUser(req, res) {
 
     try {
 
-        Object.keys(req.body).map(key => req.body[key] = req.body[key].toLowerCase()); //PASA TODOS LOS PARÁMETROS DEL BODY A LOWER, MEJORAR SOLO PASANDO ALGUNOS PÁRAMS? CREAR MÉTODO?
+        // Object.keys(req.body).map(key => {
+
+        //     //TRANSFORMA TODO A MINÚSCULA EXCEPTO LOS ROLES
+        //     if(key != roles) req.body[key] = req.body[key].toLowerCase()
+        //     else req.body[key]
+        // }) //PASA TODOS LOS PARÁMETROS DEL BODY A LOWER, MEJORAR SOLO PASANDO ALGUNOS PÁRAMS? CREAR MÉTODO?
 
         const {
             name,
@@ -132,10 +137,13 @@ async function createUser(req, res) {
             phone_no,
             username,
             profile_image,
-            password
+            password,
+            roles
         } = req.body;
 
-        if (name && last_name && middle_name && document_no && email && phone_no && username && password) {
+
+        console.log("ROLES EN LA DB QLO: ", roles);
+        if (name && last_name && middle_name && document_no && email && phone_no && username && password && roles) {
             //COMPRUEBO QUE EL RUT,USERNAME E EMAIL NO EXISTAN  EN LA BASE DE DATOS user.rut.toLowerCase()
             const result_search = await Promise.all([
                 pool.query('SELECT id_user FROM users WHERE document_no = $1', [document_no]),
@@ -186,8 +194,10 @@ async function createUser(req, res) {
                     })
                 default:
                     let salt = bcrypt.genSaltSync(10);
-                    const text = 'INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8)  RETURNING id_user';
+                    const text = 'INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_user';
                     const values = [name, last_name, middle_name, document_no, email, phone_no, username, bcrypt.hashSync(password, salt)];
+                    const
+
                     const {
                         rows
                     } = await pool.query(text, values);

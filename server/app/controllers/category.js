@@ -17,8 +17,17 @@ async function getCategories(req, res) {
         const search = req.query.search;
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
+        const last_by_techer = req.query.last_by_teacher;
 
         let values, query;
+
+        if (last_by_techer) {
+            const query = `SELECT s.name AS subject, c.id_category, c.name, c.created_at, c.updated_at FROM categories AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject WHERE id_user = $1 ORDER BY c.updated_at DESC LIMIT 5`;
+            const values = [last_by_techer];
+            const { rows } = await pool.query(query, values);
+            return res.send(rows)
+        }
+
 
         if(teacher_options){
             const query = `${CATEGORIES_OPTIONS} WHERE id_user = $1 ORDER BY name`;

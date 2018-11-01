@@ -9,7 +9,7 @@ const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
 
 
 
-async function getSubcategories(req, res) {
+async function getQuestions(req, res) {
 
     try {
         const subject = req.params.subject;
@@ -18,8 +18,16 @@ async function getSubcategories(req, res) {
         const category_options = req.query.category_options;
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
+        const last_by_techer = req.query.last_by_teacher;
 
         let values, query;
+
+        if (last_by_techer) {
+            const query = `SELECT su.name AS subject, c.name AS category, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.created_at, q.updated_at FROM questions AS q INNER JOIN subcategories AS s on q.id_subcategory = s.id_subcategory INNER JOIN categories AS c ON s.id_category = c.id_category INNER JOIN subjects AS su ON c.id_subject = su.id_subject WHERE id_user = $1 ORDER BY s.updated_at DESC LIMIT 5`;
+            const values = [last_by_techer];
+            const { rows } = await pool.query(query, values);
+            return res.send(rows)
+        }
 
         if(category_options){
             const query = `${SUBCATEGORY_OPTIONS} WHERE id_category = $1 ORDER BY name`;
@@ -121,6 +129,6 @@ async function deleteSubcategory(req, res) {
 
 
 module.exports = {
-
+    getQuestions,
     createQuestion,
 }

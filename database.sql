@@ -81,13 +81,16 @@ CREATE TABLE courses
 	id_course SERIAL,
 	id_calendar SMALLINT NOT NULL,
 	id_user	INTEGER NOT NULL,
-	id_subject	INTEGER NOT NULL,
+	id_subject INTEGER NOT NULL,
+	code VARCHAR(8) NOT NULL,
 	name VARCHAR(30) NOT NULL UNIQUE,
 	course_goal SMALLINT DEFAULT 0,
 	student_goal SMALLINT DEFAULT 0,
+	active BOOLEAN NOT NULL DEFAULT true,
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW(),
 	CONSTRAINT pk_course PRIMARY KEY (id_course),
+	CONSTRAINT uq_code_course UNIQUE (code),
 	CONSTRAINT fk_course__calendar FOREIGN KEY (id_calendar) REFERENCES calendars(id_calendar) ON UPDATE CASCADE ON DELETE RESTRICT,
 	CONSTRAINT fk_course__user_subject FOREIGN KEY (id_user, id_subject) REFERENCES user_subject(id_user, id_subject) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -338,3 +341,7 @@ VALUES ('rojo', 'F4516C'), ('verde', '34BFA3'), ('amarillo', 'FFB822'), ('morado
 INSERT INTO calendars (year, semester)
 VALUES (date_part('year', CURRENT_DATE), 1);
 
+
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+INSERT INTO courses(id_calendar, id_user, id_subject, name, course_goal, student_goal, code) VALUES(1,1,1,'dfffsds',2323,223,LEFT(uuid_generate_v4()::text, 8));

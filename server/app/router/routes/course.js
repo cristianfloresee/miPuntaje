@@ -5,7 +5,7 @@ const courseController = require('../../controllers').course;
 
 var api = express.Router();
 
-//api.get('/', calendarController.getCalendars);
+api.get('/', courseController.getCourses);
 // api.get('/:userId', colorController.getColorsByUserId);
 api.post('/create', courseController.createCourse);
 // api.put('/update/:calendarId', calendarController.updateCalendar);
