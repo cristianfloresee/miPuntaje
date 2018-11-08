@@ -1,6 +1,6 @@
 'use strict'
 
-const pool = require('../database/pool');
+const pool = require('../database');
 
 //FRAGMENTOS DE CONSULTA
 //const SUBCATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
@@ -59,8 +59,8 @@ async function getQuestions(req, res) {
             query = `${CATEGORIES_OPTIONS} ORDER BY name`;
         } 
         
-        console.log("QUERY: ", query);
-        console.log("VALUE: ", values);
+        //console.log("QUERY: ", query);
+        //console.log("VALUE: ", values);
         const { rows } = await pool.query(query, values);
 
 

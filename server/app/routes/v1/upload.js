@@ -1,7 +1,7 @@
 const express = require('express');
 const file_upload = require('express-fileupload');
 const app = express();
-const pool = require('../../database/pool');
+const pool = require('../../database');
 const fs = require('fs');
 const path = require('path');
 

@@ -6,6 +6,35 @@
 </h2>
 https://www.wlaurance.coms
 
+https://shields.io/#/
+
+https://github.com/jackhutu/jackblog-api-express/tree/master/server
+//boilerplate
+https://github.com/danielfsousa/express-rest-es2017-boilerplate
+//me tinca usar este:
+//http-codes
+https://github.com/adaltas/node-http-status
+
+//validador de paramtros (body, query string)
+https://github.com/chriso/validator.js#validators
+
+
+//manejador de errores respuesta http
+https://github.com/hapijs/boom
+
+https://github.com/qawemlilo/express-mysql/blob/master/controllers/user.js
+
+//manejador de errores por consola
+https://github.com/expressjs/errorhandler
+//ARCHIVO DEERROR
+https://github.com/danielfsousa/express-rest-es2017-boilerplate/blob/master/src/api/utils/APIError.js
+
+
+-- VALIDADORES
+https://github.com/hapijs/joi
+Usa Joi, es medio viejo: (https://github.com/andrewkeig/express-validation)
+AJV (https://github.com/epoberezkin/ajv)
+
 ## Tabla de Contenidos
 - [1. Empezando]
 - [2. ]
@@ -84,7 +113,9 @@ Postgres:
 
 # Otras Útilidades
 Instalar nodemon:
-npm install -g nodemon
+npm install nodemon --save-dev
+npm install pretty-error --save-dev
+npm install http-status --save (https://github.com/adaltas/node-http-status)
 
 ---
 

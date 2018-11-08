@@ -1,6 +1,9 @@
 'use strict'
 
-const pool = require('../database/pool');
+// ----------------------------------------
+// Load modules
+// ----------------------------------------
+const pool = require('../database');
 
 //FRAGMENTOS DE CONSULTA
 const CATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
@@ -18,6 +21,20 @@ async function getCategories(req, res) {
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
         const last_by_techer = req.query.last_by_teacher;
+
+
+        const id_user = req.query.id_user;
+        const id_subject = req.query.id_subject;
+        console.log(`kilawa.. id_user: ${id_user}, id_subject: ${id_subject}`);
+        //OBTIENE LAS CATEGORIAS DE UN PROFESOR, PARA UNA ASIGNATURA ESPECÍFICA
+        if(id_user && id_subject){
+            const text = `SELECT id_category, name FROM categories WHERE id_user = $1 AND id_subject = $2;`;
+            const values = [id_user, id_subject];
+            console.log("chorizo: ", text);
+            const { rows } = await pool.query(text, values);
+            return res.send(rows)
+        }
+
 
         let values, query;
 
@@ -55,8 +72,8 @@ async function getCategories(req, res) {
             query = `${CATEGORIES_OPTIONS} ORDER BY name`;
         } 
         
-        console.log("QUERY: ", query);
-        console.log("VALUE: ", values);
+        //console.log("QUERY: ", query);
+        //console.log("VALUE: ", values);
         const { rows } = await pool.query(query, values);
 
 

@@ -2,7 +2,7 @@
 
 //LIBRERÍAS*************************************************************************************
 const bcrypt = require('bcrypt-nodejs');
-const pool = require('../database/pool');
+const pool = require('../database');
 
 
 
@@ -55,7 +55,7 @@ async function getUsers(req, res) {
             query = `${USERS_ROLES_WFILTER}`;
             values.push(role);
         } else query = `${USERS_ROLES}`;
-        console.log("role...")
+        //console.log("role...")
 
         if (status || search) query += ` WHERE `;
 
@@ -81,8 +81,8 @@ async function getUsers(req, res) {
 
         query += ` ${PAGINATION}`;
 
-        console.log("QUERY: ", query);
-        console.log("VALUE: ", values);
+        //console.log("QUERY: ", query);
+        //console.log("VALUE: ", values);
         const {
             rows
         } = await pool.query(query, values);
@@ -119,6 +119,8 @@ async function getUserByUserId(req, res) {
 
 async function createUser(req, res) {
 
+    const client = await pool.pool.connect();
+
     try {
 
         // Object.keys(req.body).map(key => {
@@ -142,9 +144,16 @@ async function createUser(req, res) {
         } = req.body;
 
 
-        console.log("ROLES EN LA DB QLO: ", roles);
+        //console.log("ROLES EN LA DB QLO: ", roles);
         if (name && last_name && middle_name && document_no && email && phone_no && username && password && roles) {
             //COMPRUEBO QUE EL RUT,USERNAME E EMAIL NO EXISTAN  EN LA BASE DE DATOS user.rut.toLowerCase()
+
+            if (roles.length == 0) {
+                return res.status(400).send({
+                    message: 'Debe enviar al menos un rol dentrol del array de roles.'
+                })
+            }
+
             const result_search = await Promise.all([
                 pool.query('SELECT id_user FROM users WHERE document_no = $1', [document_no]),
                 pool.query('SELECT id_user FROM users WHERE username = $1', [username]),
@@ -194,20 +203,34 @@ async function createUser(req, res) {
                     })
                 default:
                     let salt = bcrypt.genSaltSync(10);
-                    const text = 'INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_user';
-                    const values = [name, last_name, middle_name, document_no, email, phone_no, username, bcrypt.hashSync(password, salt)];
-                    const
 
+                    //INICIA LA TRANSACCIÓN
+                    client.query('BEGIN');
+
+                    //INSERCIÓN DE USUARIO
+                    const text1 = 'INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
+                    const values1 = [name, last_name, middle_name, document_no, email, phone_no, username, bcrypt.hashSync(password, salt)];
+                    const user = (await client.query(text1, values1)).rows[0];
+
+                    //INSERCIÓN DE ROL
                     const {
-                        rows
-                    } = await pool.query(text, values);
-                    const roles = await pool.query('INSERT INTO user_role(id_user, id_role) VALUES($1, $2)', [rows[0].id_user, '3']);
+                        text,
+                        values
+                    } = insertRoles(roles, user.id_user);
+                    const role = (await client.query(text, values)).rows;
+
+                    //FINALIZA LA TRANSACCIÓN
+                    await client.query('COMMIT')
+
+                    //const roles = await pool.query('INSERT INTO user_role(id_user, id_role) VALUES($1, $2)', [rows[0].id_user, '3']);
                     //GENERO EL TOKEN CON DATOS DE USUARIO Y ROLES
                     res.json({
-                        message: 'successfully created user'
+                        message: 'successfully created user',
+                        user
                     })
             }
         } else {
+            await client.query('ROLLBACK');
             res.status(400).send({
                 message: 'send all necessary fields'
             })
@@ -218,6 +241,8 @@ async function createUser(req, res) {
             message: 'error when saving the user',
             error
         })
+    } finally {
+        client.release();
     }
 }
 
@@ -255,28 +280,37 @@ async function updateUser(req, res) {
             promises.push(client.query('BEGIN'));
             promises.push(client.query(q_update_us, v_update_us));
 
-            if (add_roles && add_roles.length != 0) {
-                let q_add_ro = 'INSERT INTO user_role (id_user, id_role) VALUES ';
-                let v_add_ro = [];
-                add_roles.map((role, index) => {
-                    q_add_ro += `($${index * 2 + 1},$${index * 2 + 2}),`;
-                    v_add_ro.push(...[id_user, role])
-                })
-                q_add_ro = q_add_ro.slice(0, -1);
-                promises.push(client.query(q_add_ro, v_add_ro));
+            if (add_roles && add_roles.length > 0) {
+                //INSERCIÓN DE ROL
+                const {
+                    text,
+                    values
+                } = insertRoles(add_roles, id_user);
+                console.log("texti1: ", text);
+                console.log("valuesi1: ", values)
+                promises.push(client.query(text, values));
             }
-            if (delete_roles && delete_roles.length != 0) {
-                let q_delete_ro = 'DELETE FROM user_role WHERE (id_user, id_role) IN (';
-                let v_delete_ro = [];
-                delete_roles.map((role, index) => {
-                    q_delete_ro += `($${index * 2 + 1},$${index * 2 + 2}),`;
-                    v_delete_ro.push(...[id_user, role])
-                })
-                q_delete_ro = `${q_delete_ro.slice(0, -1)})`;
-                promises.push(client.query(q_delete_ro, v_delete_ro));
+            if (delete_roles && delete_roles.length > 0) {
+                delete_roles.push(32);
+                const {
+                    text,
+                    values
+                } = deleteRoles(delete_roles, id_user);
+                console.log("texti2: ", text);
+                console.log("valuesi2: ", values)
+                promises.push(client.query(text, values));
             }
 
             const result_update = await Promise.all(promises);
+           
+            result_update.map(result=>{
+                if(result.command == 'DELETE'){ 
+                    console.log(result);
+                    console.log(`result.rowCount: ${result.rowCount}, delete_roles.length: ${delete_roles.length}`)
+                    //if(result.rowCount != delete_roles.length)
+                }
+            })
+            //console.log("result_update: ", result_update[2].command);
             await client.query('COMMIT')
 
             user = result_update[1].rows[0];
@@ -292,9 +326,7 @@ async function updateUser(req, res) {
             })
         }
 
-
-
-        //BIEN: RECUPERO ROLES, QUITO LA CONTRASEÑA Y ENVIO RESPONSE...
+        //RECUPERO ROLES, QUITO LA CONTRASEÑA Y ENVIO RESPONSE...
         const _roles = (await pool.query('SELECT array_agg(id_role ORDER BY id_role) AS roles FROM user_role WHERE id_user = $1', [id_user])).rows;
         user.roles = _roles[0].roles;
         delete user.password;
@@ -366,8 +398,6 @@ async function disableUser(req, res) {
 //     var params = req.body;
 // }
 
-
-async function getStudentsByCourse() {}
 
 
 
@@ -452,6 +482,39 @@ async function countUser(req, res) {
             error
         });
     }
+}
+
+
+function insertRoles(array_roles, id_user) {
+    const text = `INSERT INTO user_role (id_user, id_role) SELECT * FROM UNNEST ($1::int[], $2::int2[])`;
+    const values = formatRolesArray(array_roles, id_user);
+    return {
+        text,
+        values
+    }
+}
+
+function deleteRoles(array_roles, id_user) {
+    const text = `DELETE FROM user_role WHERE (id_user, id_role) IN (SELECT * FROM UNNEST ($1::int[], $2::int2[]))`;
+    const values = formatRolesArray(array_roles, id_user);
+    return {
+        text,
+        values
+    }
+}
+
+function formatRolesArray(array_roles, id_user) {
+    let values1 = []; //[id_user, id_user, id_user]
+    let values2 = []; //[role1, role2, role3]
+
+    array_roles.map((role) => {
+        values1.push(id_user);
+        values2.push(role)
+    })
+    //values1.push(28);
+    //values2.push(4);
+
+    return [values1, values2]
 }
 
 module.exports = {

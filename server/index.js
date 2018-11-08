@@ -2,42 +2,58 @@
 
 //GLOBAL CONFIG
 require('./app/config/config');
-//LIBS
+
+// ----------------------------------------
+// Load modules
+// ----------------------------------------
 const express = require('express');
 const http = require('http');
 const socket = require('socket.io');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const colors = require('colors');
-const path = require('path');
+const PrettyError = require('pretty-error');
+//const path = require('path');
+const routes = require('./app/routes/v1');
 
-//VARIABLES
-var app;
-var httpServer;
-var io;
-var num_connections;
-
+// ----------------------------------------
+// Start HTTP server
+// ----------------------------------------
 initWebServer();
+
 
 function initWebServer() {
 
-    app = express();
-    httpServer = http.Server(app);
-    io = socket(httpServer);
-    num_connections = 0;
+    let app = express();
+    let httpServer = http.Server(app);
+    let io = socket(httpServer);
+    let pe = new PrettyError();
+    pError(pe)
+    let num_connections = 0;
 
     //CARGA DE MIDDLEWARES
-    app.use(cors({ origin: '*' }));
-    app.use(bodyParser.urlencoded({ extended: false })); //CONFIGURACIÓN DE BODYPARSER
+    app.use(cors({
+        origin: '*'
+    }));
+    app.use(bodyParser.urlencoded({
+        extended: false
+    })); //CONFIGURACIÓN DE BODYPARSER
     app.use(bodyParser.json()); //CONVIERTE LA INFO QUE RECIBA DE PETICIÓN A JSON
-    //app.use(user_routes);
 
-    app.use(require('./app/router/index')); //CONFIGURACIÓN GLOBAL DE RUTAS
+    // ----------------------------------------
+    // Mount api v1 routes /v1
+    // ----------------------------------------
+    app.use(routes);
 
     (async () => {
         try {
             let server = await httpServer.listen(process.env.PORT);
-            console.log(`webserver listening on http://localhost:${process.env.PORT}... ${colors.green.bold('[OK]')}`)
+
+            const address = server.address();
+            const host = address.address;
+            //con
+            const port = address.port;
+            console.log(` [+] webserver is running on ${host}${port}... ${colors.green.bold('[OK]')}`)
 
             io.on('connection', (socket) => {
 
@@ -51,7 +67,15 @@ function initWebServer() {
 
             })
         } catch (err) {
-            console.log(err)
+            console.log(pe.render(err));
         }
+
     })()
+}
+
+function pError(pe) {
+    pe.skipNodeFiles();
+    pe.skipPackage('express');
+    pe.skipPath('internal/process/next_tick.js')
+    pe.skipPath('bootstrap_node.js')
 }

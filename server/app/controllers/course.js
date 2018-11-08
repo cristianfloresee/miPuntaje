@@ -1,6 +1,6 @@
 'use strict'
 
-const pool = require('../database/pool');
+const pool = require('../database');
 
 
 
@@ -21,7 +21,7 @@ async function getCourses(req, res) {
          const id_user = req.query.id_user;
          const id_course = req.query.id_course;
          if(id_user && id_course){
-             const query = `SELECT s.name AS subject, c.id_course, c.active, c.name, c.code, c.course_goal, c.student_goal, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1 AND id_course = $2;`;
+             const query = `SELECT s.id_subject, s.name AS subject, c.id_course, c.active, c.name, c.code, c.course_goal, c.student_goal, ca.id_calendar, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1 AND id_course = $2;`;
              const values = [id_user, id_course];
              const { rows } = await pool.query(query, values);
              if(rows.length > 0){
@@ -34,8 +34,6 @@ async function getCourses(req, res) {
              }
          }
 
-
-
         if (last_by_techer) {
             const query = `SELECT s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1 ORDER BY c.updated_at DESC LIMIT 5`;
             const values = [last_by_techer];
@@ -45,7 +43,7 @@ async function getCourses(req, res) {
         }
 
         if(all_courses_by_teacher){
-            console.log("PIKACHUUUUUUUUU");
+            //console.log("PIKACHUUUUUUUUU");
             const query = `SELECT s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1`;
             const values = [all_courses_by_teacher]
             const { rows } = await pool.query(query, values);
@@ -113,9 +111,12 @@ async function createCourse(req, res) {
         } = req.body;
 
         if (id_calendar && id_user && id_subject && name && course_goal && student_goal) {
+      
+            const text = `WITH user_subject AS (INSERT INTO user_subject(id_user,id_subject) VALUES($1,$2) ON CONFLICT ON CONSTRAINT pk_user_subject DO NOTHING) INSERT INTO courses(id_calendar, id_user, id_subject, name, course_goal, student_goal, code) VALUES($3, $4, $5, $6, $7, $8, LEFT(uuid_generate_v4()::text, 8))`
+            const values = [id_user, id_subject, id_calendar, id_user, id_subject, name, course_goal, student_goal]
             const {
                 rows
-            } = await pool.query('INSERT INTO courses(id_calendar, id_user, id_subject, name, course_goal, student_goal, code) VALUES($1, $2, $3, $4, $5, $6, LEFT(uuid_generate_v4()::text, 8))', [id_calendar, id_user, id_subject, name, course_goal, student_goal]);;
+            } = await pool.query(text, values);
             res.json({
                 message: 'successfully created calendar'
             })
@@ -136,7 +137,55 @@ async function createCourse(req, res) {
 }
 
 
+async function updateCourse(req, res) {
+    try {
+        const id_course = req.params.courseId;
+        const {
+            id_calendar,
+            id_subject,
+            name,
+            course_goal,
+            student_goal,
+            active
+        } = req.body;
+
+        let text = 'UPDATE courses SET id_calendar = $1, id_subject = $2, name = $3, course_goal = $4, student_goal = $5, active = $6 WHERE id_course = $7 RETURNING id_course, id_calendar, id_user, id_subject, name, course_goal, student_goal, created_at, updated_at, code, active';
+        let values = [id_calendar, id_subject, name, course_goal, student_goal, active, id_course];
+        const { rows } = await pool.query(text, values);
+        //EL PROBLEMA ES QUE NECESITO DEVOLVER UNA RESPUESTA CON JOIN DE TABLAS (courses, calendars, subjects)
+        res.json(rows)
+
+    } catch (error) {
+        console.log(`database ${error}`)
+        res.status(500).json({
+            message: error.message,
+            code: error.code,
+            severity: error.severity
+        });
+    }
+}
+
+async function deleteCourse(req, res) {
+    try {
+        const id_course = req.params.courseId;
+        const {
+            rows
+        } = await pool.query('DELETE FROM courses WHERE id_course = $1', [id_course]);
+        res.json({
+            message: 'successfully deleted calendar'
+        });
+    } catch (error) {
+        console.log(`database ${error}`)
+        res.status(500).json({
+            success: false,
+            error
+        });
+    }
+}
+
 module.exports = {
     getCourses,
-    createCourse
+    createCourse,
+    updateCourse,
+    deleteCourse
 }

@@ -1,10 +1,11 @@
 'use strict'
 
-const pool = require('../database/pool');
+const pool = require('../database');
 
 async function getRoles(req, res) {
     try {
-        const { rows } = await pool.query('SELECT * FROM role');
+        const text = `SELECT * FROM role`;
+        const { rows } = await pool.query(text);
         res.json(rows)
     } catch (err) {
         console.log(`database ${err}`)

@@ -3,10 +3,12 @@ const color = require('./color');
 const calendar = require('./calendar');
 const category = require('./category');
 const subcategory = require('./subcategory');
-const sesion = require('./session');
+const auth = require('./auth');
 const subject = require('./subject');
 const course = require('./course');
 const question = require('./question');
+const class_module = require('./module');
+const enrollment = require('./enrollment');
 
 module.exports = {
     user,
@@ -15,7 +17,9 @@ module.exports = {
     category,
     subcategory,
     course,
-    sesion,
+    auth,
     subject,
-    question
+    question,
+    class_module,
+    enrollment
 };

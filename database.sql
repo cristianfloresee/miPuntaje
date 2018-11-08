@@ -15,20 +15,9 @@ CREATE TABLE users
 	password VARCHAR(255) NOT NULL,
 	active BOOLEAN NOT NULL DEFAULT TRUE,
 	profile_image VARCHAR(50),
-	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_user PRIMARY KEY (id_user)
-);
-
--- ----------------------------
--- Table structure for roles
--- ----------------------------
-DROP TABLE IF EXISTS roles;
-CREATE TABLE roles
-(
-	id_role SMALLSERIAL,
-	name VARCHAR(30) NOT NULL UNIQUE,
-	CONSTRAINT pk_role PRIMARY KEY (id_role)
 );
 
 -- ----------------------------
@@ -40,8 +29,8 @@ CREATE TABLE calendars
 	id_calendar SMALLSERIAL,
 	year SMALLINT NOT NULL,
 	semester SMALLINT NOT NULL,
-	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_calendar PRIMARY KEY (id_calendar),
 	CONSTRAINT uq_calendar UNIQUE(year, semester)
 );
@@ -54,8 +43,8 @@ CREATE TABLE subjects
 (
 	id_subject SERIAL,
 	name VARCHAR(30) NOT NULL UNIQUE,
-	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_subject PRIMARY KEY (id_subject)
 );
 
@@ -87,8 +76,8 @@ CREATE TABLE courses
 	course_goal SMALLINT DEFAULT 0,
 	student_goal SMALLINT DEFAULT 0,
 	active BOOLEAN NOT NULL DEFAULT true,
-	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_course PRIMARY KEY (id_course),
 	CONSTRAINT uq_code_course UNIQUE (code),
 	CONSTRAINT fk_course__calendar FOREIGN KEY (id_calendar) REFERENCES calendars(id_calendar) ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -116,10 +105,14 @@ CREATE TABLE modules
 (
 	id_module SERIAL,
 	id_course INTEGER NOT NULL,
-	name VARCHAR(30) NOT NULL UNIQUE,
-	position SMALLINT UNIQUE,
+	name VARCHAR(30) NOT NULL,
+	position SMALLINT,
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_module PRIMARY KEY (id_module),
-	CONSTRAINT fk_module__course FOREIGN KEY (id_course) REFERENCES courses(id_course) ON UPDATE CASCADE ON DELETE RESTRICT
+	CONSTRAINT fk_module__course FOREIGN KEY (id_course) REFERENCES courses(id_course) ON UPDATE CASCADE ON DELETE RESTRICT,
+	CONSTRAINT uq_module__name UNIQUE(id_course, name),
+	CONSTRAINT uq_module__position UNIQUE(id_course, position)
 );
 
 -- ----------------------------
@@ -133,8 +126,8 @@ CREATE TABLE classes
 	description VARCHAR(100),
 	status BOOLEAN NOT NULL DEFAULT FALSE,
 	date TIMESTAMP,
-   	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+   	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_class PRIMARY KEY (id_class),
 	CONSTRAINT fk_class__module FOREIGN KEY (id_module) REFERENCES modules(id_module) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -149,8 +142,8 @@ CREATE TABLE activities
 	id_class INTEGER NOT NULL,
 	name VARCHAR(30) NOT NULL UNIQUE,
 	status BOOLEAN NOT NULL DEFAULT FALSE,
-	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_activity PRIMARY KEY (id_activity),
 	CONSTRAINT fk_activity__class FOREIGN KEY (id_class) REFERENCES classes(id_class) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -166,8 +159,8 @@ CREATE TABLE categories
 	id_user	INTEGER NOT NULL,
 	id_subject	INTEGER NOT NULL,
 	name VARCHAR(30) NOT NULL,
-	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_category PRIMARY KEY (id_category),
 	CONSTRAINT fk_category__user_subject FOREIGN KEY (id_user, id_subject) REFERENCES user_subject(id_user, id_subject) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -181,8 +174,8 @@ CREATE TABLE subcategories
 	id_subcategory SERIAL,
 	id_category INTEGER NOT NULL,
 	name VARCHAR(30) NOT NULL,
-	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_subcategory PRIMARY KEY (id_subcategory),
 	CONSTRAINT fk_subcategory__category FOREIGN KEY (id_category) REFERENCES categories(id_category) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -198,8 +191,8 @@ CREATE TABLE questions
 	description VARCHAR(30) NOT NULL,
 	difficulty SMALLINT NOT NULL,
 	shared BOOLEAN DEFAULT FALSE,
-	created_at TIMESTAMP DEFAULT NOW(),
-	updated_at TIMESTAMP DEFAULT NOW(),
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_question PRIMARY KEY (id_question),
 	CONSTRAINT fk_question__subcategory FOREIGN KEY (id_subcategory) REFERENCES subcategories(id_subcategory) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -216,22 +209,21 @@ CREATE TABLE difficulties
 );
 
 -- ----------------------------
--- Table structure for user_role
+-- Table structure for roles
 -- ----------------------------
-DROP TABLE IF EXISTS user_role;
-CREATE TABLE user_role
+DROP TABLE IF EXISTS roles;
+CREATE TABLE roles
 (
 	id_user INTEGER NOT NULL,
-	id_role INTEGER NOT NULL,
-	CONSTRAINT pk_user_role PRIMARY KEY (id_user, id_role),
-	CONSTRAINT fk_user_role__user FOREIGN KEY (id_user) REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT fk_user_role__role FOREIGN KEY (id_role) REFERENCES roles(id_role) ON UPDATE CASCADE ON DELETE CASCADE
+	role INTEGER NOT NULL,
+	CONSTRAINT pk_roles PRIMARY KEY (id_user, role),
+	CONSTRAINT fk_roles__user FOREIGN KEY (id_user) REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- ----------------------------
--- Table structure for course_student
+-- Table structure for user_course
 -- ----------------------------
-DROP TABLE IF EXISTS course_student;
+DROP TABLE IF EXISTS user_course;
 CREATE TABLE course_student
 (
 	id_user INTEGER NOT NULL,
@@ -308,13 +300,7 @@ VALUES('183139613', 'Cristian Andrés', 'Flores', 'Sandoval', 'demo@demo.com', '
 -- ----------------------------
 -- Records of roles
 -- ----------------------------
-INSERT INTO roles (name)
-VALUES ('administrador'), ('profesor'), ('estudiante');
-
--- ----------------------------
--- Records of user_role
--- ----------------------------
-INSERT INTO user_role (id_user, id_role)
+INSERT INTO roles (id_user, role)
 VALUES (1,1),(1,2),(1,3);
 
 -- ----------------------------

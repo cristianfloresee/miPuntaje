@@ -1,7 +1,8 @@
 'use strict'
 
 //LIBRERIAS
-const pool = require('../database/pool');
+const pool = require('../database');
+//CONSULTAS
 const SUBJECTS = `SELECT id_subject, name, created_at, updated_at FROM subjects`;
 const SUBJECTS_OPTIONS = `SELECT id_subject, name FROM subjects`
 const PAGINATION = ` ORDER BY id_subject LIMIT $1 OFFSET $2`;
@@ -13,7 +14,18 @@ async function getSubjects(req, res) {
         const search = req.query.search;
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
+        const teacher_options = req.query.teacher_options;
         
+
+        //OBTIENE LOS NOMBRES DE LAS ASIGNATURAS EN DONDE EL PROFESOR HA CREADO CURSOS (PARA EL SELECTOR)
+        if(teacher_options){
+            const text = `SELECT s.id_subject, s.name FROM subjects AS s INNER JOIN user_subject AS us ON s.id_subject=us.id_subject WHERE us.id_user = $1 ORDER BY name`; 
+            const values = [teacher_options]
+            const { rows } = await pool.query(text, values);
+            return res.send(rows)
+        }
+
+
         let values, query;
         let promises = [];
     

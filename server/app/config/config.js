@@ -15,6 +15,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'dev';
 // 60 minutos
 // 24 horas
 // 30 días
+const MILLISECONDS_IN_A_DAY = 24 * 60 * 60 * 1000;
 process.env.TOKEN_EXPIRATION = 60 * 60 * 24 * 30;
 
 // ============================

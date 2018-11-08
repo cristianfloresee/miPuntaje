@@ -1,7 +1,9 @@
 'use strict'
 
-const pool = require('../database/pool');
-//const Color = require('../models/color');
+// ----------------------------------------
+// Load modules
+// ----------------------------------------
+const pool = require('../database');
 
 // =====================================================
 // Obtiene todos los COLORES
@@ -34,8 +36,10 @@ async function getColors(req, res) {
 // =====================================================
 async function getColorsByUserId(req, res) {
 
-    let id_user = req.params.userId
     try {
+        const id_user = req.params.userId
+
+        
         const text = 'SELECT id_color, name, haxadecimal FROM colors WHERE id_color IN (SELECT id_color FROM user_subject_color WHERE id_user = $1)';
         const values = [id_user];
         const {
