@@ -1,5 +1,5 @@
 
-<h1 align="center">API</h1>
+<h1 align="center">RuviClass API</h1>
 
 <div align="center">
   :steam_locomotive::train::train::train::train::train:
@@ -31,18 +31,23 @@
   </a>
   <!-- Test Coverage -->
   <a href="https://codecov.io/github/choojs/choo">
-    <img src="https://img.shields.io/codecov/c/github/choojs/choo/master.svg?style=flat-square"
+    <img src="https://img.shields.io/codecov/c/github/choojs/choo/master.svg?style=flat-square" 
       alt="Test Coverage" />
   </a>
   <!-- Downloads -->
   <a href="https://npmjs.org/package/choo">
-    <img src="https://img.shields.io/npm/dt/choo.svg?style=flat-square"
+    <img src="https://img.shields.io/npm/dt/choo.svg?style=flat-square" 
       alt="Download" />
   </a>
-  <!-- Standard -->
-  <a href="https://standardjs.com">
-    <img src="https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square"
-      alt="Standard" />
+  <!-- Chat -->
+  <a href="https://gitter.im/array-mixer/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
+    <img src="https://badges.gitter.im/array-mixer/Lobby.svg" 
+      alt ="Gitter">
+  </a>
+  <!-- License -->
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" 
+      alt="MIT">
   </a>
 </div>
 
@@ -94,27 +99,31 @@
 
 This is a boilerplate application for building REST APIs in Node.js using ES6 and Express. Intended for use with Postgres using Sequelize ORM.
 
-### Features
+## Installation 📦
 
-| Feature                                | Summary                                                                                                                                                                                                                                                     |
-|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ES6 via Babel                  	 	 | ES6 support using [Babel](https://babeljs.io/).  |
-| Authentication via JsonWebToken                  	 	 | Supports authentication using [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken).  |
-| Code Linting               			 | Uses the airbnb-base style guide with ESLint parsing modern ES6 syntax                                                                                              |
-| Auto server restart                  	 | Restart the server using [nodemon](https://github.com/remy/nodemon) in real-time anytime an edit is made, with babel compilation and eslint.                                                                                                                                                                            |
-| ES6 Code Coverage via [istanbul](https://www.npmjs.com/package/istanbul)                  | Supports code coverage of ES6 code using istanbul and mocha. Code coverage reports are saved in `coverage/` directory post `yarn test` execution. Open `coverage/lcov-report/index.html` to view coverage report. `yarn test` also displays code coverage summary on console. Code coverage can also be enforced overall and per file as well, configured via .istanbul.yml                                                                                                                                                                            |
-| Debugging via [debug](https://www.npmjs.com/package/debug)           | Instead of inserting and deleting console.log you can replace it with the debug function and just leave it there. You can then selectively debug portions of your code by setting DEBUG env variable. If DEBUG env variable is not set, nothing is displayed to the console.                       |
-| Promisified Code via [bluebird](https://github.com/petkaantonov/bluebird)           | We love promise, don't we ? All our code is promisified and even so our tests via [supertest-as-promised](https://www.npmjs.com/package/supertest-as-promised).                       |
-| API parameter validation via [express-validation](https://www.npmjs.com/package/express-validation)           | Validate body, params, query, headers and cookies of a request (via middleware) and return a response with errors; if any of the configured validation rules fail. You won't anymore need to make your route handler dirty with such validations. |
-| Pre-commit hooks           | Runs lint and tests before any commit is made locally, making sure that only tested and quality code is committed
-| Secure app via [helmet](https://github.com/helmetjs/helmet)           | Helmet helps secure Express apps by setting various HTTP headers. |
-| Uses [yarn](https://yarnpkg.com) over npm            | Uses new released yarn package manager by facebook. You can read more about it [here](https://code.facebook.com/posts/1840075619545360) |
+```
+npm install
+```
 
-- CORS support via [cors](https://github.com/expressjs/cors)
-- Uses [http-status](https://www.npmjs.com/package/http-status) to set http status code. It is recommended to use `httpStatus.INTERNAL_SERVER_ERROR` instead of directly using `500` when setting status code.
-- Has `.editorconfig` which helps developers define and maintain consistent coding styles between different editors and IDEs.
+## Features
 
-## Getting Started 💾
+Package             | Feature                        |  Sumary
+--------------------|--------------------------------|----------------------------------
+bcrypt-nodejs       | --                             | --    
+colors              | --                             | --
+cors                | --                             | --
+express-validation  | API parameter validation       |  Validate body, params, query, headers and cookies of a request (via middleware) and return a response with errors; if any of the configured validation rules fail. You won't anymore need to make your route handler dirty with such validations.
+http-status         | --                             | To set http status code. It is recommended to use httpStatus.INTERNAL_SERVER_ERROR instead of directly using 500 when setting status code.
+jsonwebtoken        | Authentication                 | --
+moment              | --                             | --
+nodemon             | Auto server restart            | Restart the server in real-time anytime an edit is made.
+pg                  | --                             | --
+socket&#46;io       | --                             | --
+--                  | Code linting                   | --
+
+VSCode Extension  | Description
+------------------|------------------------
+.editorconfig     | It helps developers define and maintain consistent coding styles between different editors and IDEs.
 
 Instalación de Dependencias
 
@@ -125,33 +134,38 @@ npm install jsonwebtoken --save
 ```sh
 $ npm install choo
 ```
+## Documentation
 
 ## FAQ
 
-### Why is it called Choo?
+### Why is it called RuviClass?
 Because I thought it sounded cute. All these programs talk about being
 _"performant"_, _"rigid"_, _"robust"_ - I like programming to be light, fun and
 non-scary. Choo embraces that.
 
-## Built with 
+## Used by
 
-- [Express.js](http://www.w3schools.com/jquery/jquery_ref_ajax.asp) - jQuery simplifies HTML document traversing, event handling, animating, and Ajax interactions for rapid web development.
-- [Google Chart API](https://developers.google.com/chart/interactive/docs/quick_start) - Free , Rich Gallery , Customizable and Cross-browser compatible.
-- [Bootstrap](http://getbootstrap.com/) - Extensive list of components and  Bundled Javascript plugins.
+<p align="center">
+       <img src="https://dl.dropboxusercontent.com/s/yp3kwu2lobe9pvg/who-uses-sdversion.png?dl=0" alt="Who uses SDVersion">
+</p>
 
-## See Also
+## 📚 See Also
 
-- [](https://github.com/choojs/bankai) - streaming asset compiler
+- [RuviClass Client](https://github.com/choojs/bankai) - streaming asset compiler
 
-## Backers ❤️
+## 🎁 Contributing
+
+Please see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Backers 
 Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/git-point#backer)]
 
-## Sponsors ❤️
+## Sponsors
 Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/git-point#sponsor)]
 
-## Acknowledgments
+## ❤️ Acknowledgments
 Thanks to:
 - [JetBrains](https://www.jetbrains.com) for supporting us with a [Free Open Source License](https://www.jetbrains.com/buy/opensource).
 
-## License 📜
-Nu is made available under the [MIT©](https://tldrlegal.com/license/mit-license)
+## 🎓 License
+Usage is provided under the [MIT©](https://tldrlegal.com/license/mit-license) License.
