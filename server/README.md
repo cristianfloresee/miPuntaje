@@ -84,7 +84,7 @@
   </a>
 </div>
 
-## Table of Contents 🚩
+## Table of Contents 
 
 - [Introduction](#introduction)
 - [Features](#features)
@@ -99,13 +99,13 @@
 
 This is a boilerplate application for building REST APIs in Node.js using ES6 and Express. Intended for use with Postgres using Sequelize ORM.
 
-## Installation 📦
+## 📦 Requirements & Installation 
 
 ```
 npm install
 ```
 
-## Features
+## 🎨 Features
 
 Package             | Feature                        |  Sumary
 --------------------|--------------------------------|----------------------------------
@@ -134,16 +134,16 @@ npm install jsonwebtoken --save
 ```sh
 $ npm install choo
 ```
-## Documentation
+## 📙 Documentation
 
-## FAQ
+## 💬 FAQ
 
 ### Why is it called RuviClass?
 Because I thought it sounded cute. All these programs talk about being
 _"performant"_, _"rigid"_, _"robust"_ - I like programming to be light, fun and
 non-scary. Choo embraces that.
 
-## Used by
+## 🚀 Used by
 
 <p align="center">
        <img src="https://dl.dropboxusercontent.com/s/yp3kwu2lobe9pvg/who-uses-sdversion.png?dl=0" alt="Who uses SDVersion">
@@ -153,15 +153,28 @@ non-scary. Choo embraces that.
 
 - [RuviClass Client](https://github.com/choojs/bankai) - streaming asset compiler
 
-## 🎁 Contributing
+## 🤝 Contributing
 
-Please see [CONTRIBUTING.md](./CONTRIBUTING.md).
+We love contributions! Check out the [Contribution guide](https://github.com/sourcerer-io/sourcerer-app/blob/master/CONTRIBUTING.md) for more information.
 
-## Backers 
-Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/git-point#backer)]
+## 🎁 Support
 
-## Sponsors
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/git-point#sponsor)]
+Creating a quality framework takes a lot of time. Unlike others frameworks, RuviClass is completely independently funded. We fight for our users. This does mean however that we also have to spend time working contracts to pay the bills. This is where you can help: by chipping in you can ensure more time is spent improving RuviClass rather than dealing with distractions.
+
+### Backers 
+Become a backer, and buy us a coffee (or perhaps lunch?) every month or so. [Become a backer](https://opencollective.com/choo#backer)
+Thank you to all our backers! 🙏
+
+<a href="https://opencollective.com/choo/backer/0/website" target="_blank"><img src="https://opencollective.com/choo/backer/0/avatar.svg"></a>
+<a href="https://opencollective.com/choo/backer/10/website" target="_blank"><img src="https://opencollective.com/choo/backer/10/avatar.svg"></a>
+
+### Sponsors
+Become a sponsor and help ensure the development of independent quality software. You can help us keep the lights on, bellies full and work days sharp and focused on improving the state of the web. [Become a sponsor](https://opencollective.com/choo#sponsor)
+
+Support this project by becoming a sponsor. Your logo will show up here with a link to your website.
+
+<a href="https://opencollective.com/choo/sponsor/0/website" target="_blank"><img src="https://opencollective.com/choo/sponsor/0/avatar.svg"></a>
+<a href="https://opencollective.com/choo/sponsor/1/website" target="_blank"><img src="https://opencollective.com/choo/sponsor/1/avatar.svg"></a>
 
 ## ❤️ Acknowledgments
 Thanks to:
