@@ -4,6 +4,7 @@
 // Load modules
 // ----------------------------------------
 const express = require('express');
+//const validate = require('express-validation');
 
 // ----------------------------------------
 // Load controllers
@@ -21,7 +22,7 @@ var api = express.Router();
 api.post('/login', authController.login);
 module.exports = api;
 
-
+// .post(validate(paramValidation.login), authCtrl.login);
 
 /**
  * @api {post} v1/auth/refresh-token Refresh Token

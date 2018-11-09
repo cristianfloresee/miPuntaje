@@ -8,9 +8,18 @@ https://www.wlaurance.coms
 
 https://shields.io/#/
 
-https://github.com/jackhutu/jackblog-api-express/tree/master/server
-//boilerplate
+ La API del cliente ButterCMS tiene un valor predeterminado de 3000 ms o 3 segundos.
+
+Eche un vistazo a este objeto de error cuando se agote el tiempo de espera del controlador de excepciones:
+
+{code:'ECONNABORTED', message:String, stack:String, timeout:3000}
+Una idea es volver a intentar automáticamente la solicitud después de que falle. 
+
+Bolerplates
 https://github.com/danielfsousa/express-rest-es2017-boilerplate
+https://github.com/jackhutu/jackblog-api-express/tree/master/server
+https://github.com/amida-tech/api-boilerplate/
+
 //me tinca usar este:
 //http-codes
 https://github.com/adaltas/node-http-status

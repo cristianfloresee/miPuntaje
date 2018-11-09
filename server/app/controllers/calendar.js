@@ -4,7 +4,9 @@
 // Load modules
 // ----------------------------------------
 const status = require('http-status');
+//const uuid4 = require('uuid/v4');
 const pool = require('../database');
+
 
 //FRAGMENTOS DE CONSULTA
 const CALENDARS = 'SELECT id_calendar, year, semester, created_at, updated_at, count(*) OVER() AS count FROM calendars';
@@ -55,7 +57,7 @@ async function getCalendars(req, res) {
 
         const text2 = 'SELECT count(*) FROM calendars'
         const total_items = (await pool.query(text2)).rows[0].count;
-  
+
         // console.log("query: ", query);
         // console.log("values: ", values);
         // console.log("rows: ", rows)
@@ -63,7 +65,7 @@ async function getCalendars(req, res) {
         //     rows
         // } = await pool.query(query, values);
 
-      
+
         res.status(status.OK).json({
             total_items,
             items: rows
@@ -87,13 +89,11 @@ async function createCalendar(req, res) {
         } = req.body;
 
         if (year && semester) {
-
-            const {
-                rows
-            } = await pool.query('INSERT INTO calendars(year, semester) VALUES($1, $2)', [year, semester]);
-            res.json({
-                message: 'successfully created calendar'
-            })
+            const text = 'INSERT INTO calendars(year, semester) VALUES($1, $2)';
+            const values = [year, semester];
+            const result = (await pool.query(text, values)).rows[0];
+            res.status(status.CREATED)
+                .send();
 
         } else {
             res.status(400).json({
@@ -113,8 +113,8 @@ async function createCalendar(req, res) {
 
 /**
  * 
- * @param {*} req 
- * @param {*} res 
+ * @param {object} req 
+ * @param {object} res 
  */
 async function updateCalendar(req, res) {
     try {
@@ -124,12 +124,20 @@ async function updateCalendar(req, res) {
             semester
         } = req.body;
 
-        let text = 'UPDATE calendars SET year = $1, semester = $2 WHERE id_calendar = $3 RETURNING id_calendar, year, semester, created_at, updated_at';
-        let values = [year, semester, id_calendar];
-        const {
-            rows
-        } = await pool.query(text, values);
-        res.json(rows)
+        const text1 = 'SELECT id_calendar FROM calendars WHERE id_calendar = $1';
+        const values1 = [id_calendar];
+        const res1 = (await pool.query(text1, values1)).rows[0];
+        if (!res1) {
+            return res.status(status.NOT_FOUND)
+                .send({
+                    message: 'calendar not found'
+                })
+        }
+
+        const text2 = 'UPDATE calendars SET year = $1, semester = $2 WHERE id_calendar = $3 RETURNING id_calendar, year, semester, created_at, updated_at';
+        const values2 = [year, semester, id_calendar];
+        const res2 = (await pool.query(text2, values2)).rows[0];
+        res.json(res2)
 
     } catch (error) {
         console.log(`database ${error}`)

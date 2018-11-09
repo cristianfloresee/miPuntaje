@@ -4,6 +4,7 @@
 // Load modules
 // ----------------------------------------
 const express = require('express');
+const status = require('http-status');
         
 // ----------------------------------------
 // Load routes
@@ -47,7 +48,7 @@ module.exports = app;
 // ----------------------------------------
 // Server status
 // ----------------------------------------
-//app.get('/status', (req, res) => res.send('OK'));
+app.get('/status', (req, res) => res.send('OK'));
 
 // ----------------------------------------
 // Documentation

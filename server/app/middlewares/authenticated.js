@@ -1,10 +1,11 @@
 'use strict'
 
 const jwt = require('jsonwebtoken');
-
+const status = require('http-status');
 
 
 let checkToken = (req, res, next) => {
+
     if (!req.headers.authorization) {
         return res.status(401).json({
             message: 'The request does not have the authentication header'
@@ -14,10 +15,11 @@ let checkToken = (req, res, next) => {
     let token = req.get('authorization');
     jwt.verify(token, process.env.SEED, (error, decoded) => {
         if (error) {
-            return res.status(401).json({
-                success: false,
-                error: 'invalid token'
-            })
+            return res.status(status.UNAUTHORIZED)
+                .json({
+                    success: false,
+                    error: 'invalid token'
+                })
         }
         req.user_payload = decoded.user;
         next();

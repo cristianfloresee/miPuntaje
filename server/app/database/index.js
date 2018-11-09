@@ -13,9 +13,7 @@
 // Load modules
 // ----------------------------------------
 
-const {
-  Pool
-} = require('pg');
+const Pool = require('pg').Pool;
 const colors = require('colors');
 const config_db = require('../config/config');
 const pool = new Pool(config_db);

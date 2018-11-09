@@ -14,3 +14,12 @@ api.get('/count', calendarController.countCalendar);
 
 
 module.exports = api;
+
+
+/** POST /api/users - Create new user */
+//api.get('/', checkToken, subjectController.getSubjects);
+//.post(validate(paramValidation.createUser), userCtrl.create);
+
+
+/** PUT /api/users/:userId - Update user */
+//.put(validate(paramValidation.updateUser), userCtrl.update

@@ -74,8 +74,8 @@ function initWebServer() {
 }
 
 function pError(pe) {
-    pe.skipNodeFiles();
-    pe.skipPackage('express');
+    //pe.skipNodeFiles();
+    //pe.skipPackage('express');
     pe.skipPath('internal/process/next_tick.js')
     pe.skipPath('bootstrap_node.js')
 }
