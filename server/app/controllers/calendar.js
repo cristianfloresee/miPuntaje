@@ -53,6 +53,9 @@ async function getCalendars(req, res) {
             rows
         } = (await Promise.all(promises))[0];
 
+        const text2 = 'SELECT count(*) FROM calendars'
+        const total_items = (await pool.query(text2)).rows[0].count;
+  
         // console.log("query: ", query);
         // console.log("values: ", values);
         // console.log("rows: ", rows)
@@ -60,11 +63,10 @@ async function getCalendars(req, res) {
         //     rows
         // } = await pool.query(query, values);
 
-        const total = rows.length != 0 ? rows[0].count : 0;
-
-        res.status(status.OK).send({
-            total,
-            results: rows
+      
+        res.status(status.OK).json({
+            total_items,
+            items: rows
         });
 
     } catch (error) {
@@ -177,7 +179,7 @@ async function countCalendar(req, res) {
         const semester = string(req.query.semester);
 
         //QUERY DATABASE
-        const text = `SELECT count(*) AS count FROM calendars`;
+        const text = `SELECT count(*) FROM calendars`;
         const {
             rows
         } = await pool.query(text);
@@ -185,7 +187,7 @@ async function countCalendar(req, res) {
         //HTTP RESPONSE
         console.log(rows);
         res.json({
-            result: rows[0].count
+            total_items: rows[0].count
         });
     } catch (error) {
         console.log(`${error}`)
