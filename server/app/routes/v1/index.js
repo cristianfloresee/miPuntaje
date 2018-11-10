@@ -5,7 +5,7 @@
 // ----------------------------------------
 const express = require('express');
 const status = require('http-status');
-        
+
 // ----------------------------------------
 // Load routes
 // ----------------------------------------
@@ -42,6 +42,10 @@ app.use('/modules', modules);
 app.use('/enrollments', enrollments);
 app.use(require('./upload'));
 app.use(require('./images'));
+app.use(function(err,req,res,next) {
+    console.log(err.stack);
+    res.status(500).send({"Error" : err.stack});
+  });
 
 module.exports = app;
 

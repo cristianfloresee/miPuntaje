@@ -202,6 +202,7 @@ async function createUser(req, res) {
                         message: `this email has been taken`
                     })
                 default:
+                //HASHEA LA PASSWORD
                     let salt = bcrypt.genSaltSync(10);
 
                     //INICIA LA TRANSACCIÓN

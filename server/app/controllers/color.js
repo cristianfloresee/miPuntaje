@@ -8,26 +8,27 @@ const pool = require('../database');
 // =====================================================
 // Obtiene todos los COLORES
 // =====================================================
-async function getColors(req, res) {
+async function getColors(req, res, next) {
     try {
-        const text = 'SELECT id_color, name, hexadecimal FROM colors ORDER BY name ASC';
+        const text = 'SELECT id_color, name, hexadecimal FROM coors ORDER BY name ASC';
         const {
             rows
         } = await pool.query(text);
         res.json({
-            success: true,
             colors: rows
         })
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'error in obtaining colors',
-            error: {
-                message: error.message,
-                code: error.code,
-                severity: error.severity
-            }
-        });
+        return next(error);
+
+        // res.status(500).json({
+        //     message: 'error in obtaining colors',
+        //     error: {
+        //         message: error.message,
+        //         code: error.code,
+        //         severity: error.severity
+        //     }
+        // });
+        
     }
 }
 

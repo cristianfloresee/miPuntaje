@@ -6,6 +6,7 @@ require('./app/config/config');
 // ----------------------------------------
 // Load modules
 // ----------------------------------------
+const eValidator = require('express-validator')
 const express = require('express');
 const http = require('http');
 const socket = require('socket.io');
@@ -39,11 +40,23 @@ function initWebServer() {
         extended: false
     })); //CONFIGURACIÓN DE BODYPARSER
     app.use(bodyParser.json()); //CONVIERTE LA INFO QUE RECIBA DE PETICIÓN A JSON
+    app.use(eValidator());
 
+    // if (process.env.NODE_ENV === 'development') {
+    //     // only use in development
+    //     app.use(errorhandler({log: errorNotification}))
+    //   }
+
+   
     // ----------------------------------------
     // Mount api v1 routes /v1
     // ----------------------------------------
     app.use(routes);
+    app.use(function(err,req,res,next) {
+        console.log(err.stack);
+        res.status(500).send({"Error" : err.stack});
+      });
+    
 
     (async () => {
         try {
@@ -74,8 +87,8 @@ function initWebServer() {
 }
 
 function pError(pe) {
-    //pe.skipNodeFiles();
-    //pe.skipPackage('express');
+    pe.skipNodeFiles();
+    pe.skipPackage('express');
     pe.skipPath('internal/process/next_tick.js')
     pe.skipPath('bootstrap_node.js')
 }

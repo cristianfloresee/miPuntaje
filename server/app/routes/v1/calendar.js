@@ -2,12 +2,13 @@
 
 const express = require('express');
 const calendarController = require('../../controllers').calendar;
+const validate = require('../../validations/calendar.validation');
 
 var api = express.Router();
 
 api.get('/', calendarController.getCalendars);
 // api.get('/:userId', colorController.getColorsByUserId);
-api.post('/create', calendarController.createCalendar);
+api.post('/create', validate.createCalendar ,calendarController.createCalendar);
 api.put('/update/:calendarId', calendarController.updateCalendar);
 api.delete('/delete/:calendarId', calendarController.deleteCalendar);
 api.get('/count', calendarController.countCalendar);

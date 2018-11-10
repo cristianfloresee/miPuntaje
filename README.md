@@ -16,7 +16,7 @@ Eche un vistazo a este objeto de error cuando se agote el tiempo de espera del c
 Una idea es volver a intentar automáticamente la solicitud después de que falle. 
 
 Bolerplates
-https://github.com/danielfsousa/express-rest-es2017-boilerplate
+https://github.com/danielfsousa/express-rest-es2017-boilerplate (EL MEJOR)
 https://github.com/jackhutu/jackblog-api-express/tree/master/server
 https://github.com/amida-tech/api-boilerplate/
 
@@ -136,3 +136,14 @@ npm install http-status --save (https://github.com/adaltas/node-http-status)
 # License
 
 MIT© [Cristian Flores Sandoval](https://github.com/cristianfloresee)
+
+```sh
+npm install -g nodemon
+npm install express --save
+npm install jsonwebtoken --save
+
+```
+
+https://medium.freecodecamp.org/how-to-make-input-validation-simple-and-clean-in-your-express-js-app-ea9b5ff5a8a7
+
+ataques MITM

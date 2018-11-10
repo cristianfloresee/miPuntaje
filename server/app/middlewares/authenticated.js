@@ -2,22 +2,22 @@
 
 const jwt = require('jsonwebtoken');
 const status = require('http-status');
-
+const pool = require('../database');
 
 let checkToken = (req, res, next) => {
 
     if (!req.headers.authorization) {
-        return res.status(401).json({
-            message: 'The request does not have the authentication header'
-        });
+        return res.status(status.UNAUTHORIZED)
+            .send({
+                message: 'The request does not have the authentication header'
+            });
     }
 
     let token = req.get('authorization');
     jwt.verify(token, process.env.SEED, (error, decoded) => {
         if (error) {
             return res.status(status.UNAUTHORIZED)
-                .json({
-                    success: false,
+                .send({
                     error: 'invalid token'
                 })
         }
@@ -38,10 +38,10 @@ let checkTokenImage = (req, res, next) => {
 
     jwt.verify(token, process.env.SEED, (error, decoded) => {
         if (error) {
-            return res.status(401).json({
-                success: false,
-                error: 'invalid token'
-            })
+            return res.status(401)
+                .json({
+                    error: 'invalid token'
+                })
         }
         req.user = decoded.user;
         next();
@@ -51,9 +51,25 @@ let checkTokenImage = (req, res, next) => {
 // ============================
 // Verifica Role Administrador
 // ============================
-let checkAdminRole = (req, res, next) => {
-    let user = req.user_payload;
-    //'SELECT * FROM user_role WHERE id_user = $1 && id_role = 1'
+async function checkAdminRole(req, res, next) {
+
+    try {
+        let user = req.user_payload;
+        const text = 'SELECT role FROM roles WHERE id_user = $1 AND role = $2';
+        const values = [1]
+
+        const result = await pool.query(text, values);
+        if (result) {
+            return res.status(status.FORBIDDEN)
+                .send({
+                    message: 'You arenot a admin'
+                });
+        }
+        next();
+    } catch (error) {
+
+    }
+
 }
 
 module.exports = {

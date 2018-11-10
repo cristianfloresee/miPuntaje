@@ -20,6 +20,11 @@ var api = express.Router();
 // Routes and controllers
 // ----------------------------------------
 api.post('/login', authController.login);
+//api.post('/signup', );
+//api.post('/forgot', );
+//api.post('/reset', );
+
+
 module.exports = api;
 
 // .post(validate(paramValidation.login), authCtrl.login);

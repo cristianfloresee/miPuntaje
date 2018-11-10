@@ -25,14 +25,16 @@ async function login(req, res) {
             } = await pool.query(text, values);
 
             if (rows.length == 0) {
-                return res.status(status.BAD_REQUEST).json({
-                    message: '(email) or password incorrect.',
-                })
+                return res.status(status.BAD_REQUEST)
+                    .send({
+                        message: '(email) or password incorrect.',
+                    })
             }
 
             let user = rows[0];
+            //COMPARA PASSWORDS()
             if (!bcrypt.compareSync(password, user.password)) {
-                return res.status(status.BAD_REQUEST)
+                return res.status(status.BAD_REQUEST) //UNATHORIZED??
                     .send({
                         message: 'email or (password) incorrect.'
                     })
@@ -44,6 +46,8 @@ async function login(req, res) {
             user.roles = roles;
 
             delete user.password; //ELIMINA LA PASSWORD DEL OBJETO USUARIO
+
+            //GENERA TOKEN(ID)
             let token = jwt.sign({
                 user: user
             }, process.env.SEED, {

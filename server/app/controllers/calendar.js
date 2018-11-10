@@ -6,7 +6,10 @@
 const status = require('http-status');
 //const uuid4 = require('uuid/v4');
 const pool = require('../database');
-
+const {
+    validationResult
+} = require('express-validator/check');
+const val = require('../validations/calendar.validation')
 
 //FRAGMENTOS DE CONSULTA
 const CALENDARS = 'SELECT id_calendar, year, semester, created_at, updated_at, count(*) OVER() AS count FROM calendars';
@@ -17,8 +20,8 @@ const PAGINATION = ' ORDER BY id_calendar LIMIT $1 OFFSET $2';
 async function getCalendars(req, res) {
     try {
 
-        //const page = (parseInt(req.query.page) > 0) ? parseInt(req.query.page) : 1;
-        //const page_size = (parseInt(req.query.page_size) > 0) ? parseInt(req.query.page_size) : 10;
+        const page = (parseInt(req.query.page) > 0) ? parseInt(req.query.page) : 1; //(NaN OR <0 == 1)
+        const page_size = (parseInt(req.query.page_size) > 0) ? parseInt(req.query.page_size) : 10;
         //const sort_by = string(req.query.sort_by) || 'year';
         //const sort_order = string(req.query.sort_order) == 'desc' ? 'desc' : 'asc';
 
@@ -67,7 +70,9 @@ async function getCalendars(req, res) {
 
 
         res.status(status.OK).json({
-            total_items,
+            page: page,
+            page_size: page_size,
+            total_items: parseInt(total_items),
             items: rows
         });
 
@@ -80,34 +85,45 @@ async function getCalendars(req, res) {
     }
 }
 
+/**
+ * @apiSuccess (200) {Object} mixed `User` object
+ */
 async function createCalendar(req, res) {
 
     try {
+
+        const errors = validationResult(req).formatWith(val.errorFormatter);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                name: 'VALIDATION ERROR',
+                details: errors.array({
+                    onlyFirstError: true
+                })
+            });
+        }
+
         const {
             year,
             semester
         } = req.body;
 
-        if (year && semester) {
-            const text = 'INSERT INTO calendars(year, semester) VALUES($1, $2)';
-            const values = [year, semester];
-            const result = (await pool.query(text, values)).rows[0];
-            res.status(status.CREATED)
-                .send();
+        const text = 'INSERT INTO calendars(year, semester) VALUES($1, $2)';
+        const values = [year, semester];
+        const result = (await pool.query(text, values)).rows[0];
+        res.status(status.CREATED)
+            .send();
 
-        } else {
-            res.status(400).json({
-                message: 'send all necessary fields'
-            })
-        }
+
     } catch (error) {
         console.log(`${error}`)
-        res.status(500).json({
-            //message: 'error when saving the color',
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        })
+        res.status(status.INTERNAL_SERVER_ERROR)
+            .send({
+                //message: 'error when saving the color',
+                message: error.message,
+                code: error.code,
+                severity: error.severity
+            })
     }
 }
 
@@ -141,11 +157,12 @@ async function updateCalendar(req, res) {
 
     } catch (error) {
         console.log(`database ${error}`)
-        res.status(500).json({
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        });
+        res.status(status.INTERNAL_SERVER_ERROR)
+            .send({
+                message: error.message,
+                code: error.code,
+                severity: error.severity
+            });
     }
 }
 

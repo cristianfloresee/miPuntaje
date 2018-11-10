@@ -104,6 +104,12 @@ This is a boilerplate application for building REST APIs in Node.js using ES6 an
 ```
 npm install
 ```
+```
+node serve.js
+```
+```
+npm run dev
+```
 
 ## 🎨 Features
 
@@ -126,16 +132,9 @@ VSCode Extension  | Description
 ------------------|------------------------
 .editorconfig     | It helps developers define and maintain consistent coding styles between different editors and IDEs.
 
-Instalación de Dependencias
-
-npm install -g nodemon
-npm instal --save express
-npm install jsonwebtoken --save
-
-```sh
-$ npm install choo
-```
 ## 📙 Documentation
+
+- [RuviClass API Doc](#) - RuviClass API REST Documentation.
 
 ## 💬 FAQ
 
@@ -152,11 +151,13 @@ non-scary. Choo embraces that.
 
 ## 📚 See Also
 
-- [RuviClass Client](https://github.com/choojs/bankai) - streaming asset compiler
+- [RuviClass Client](https://github.com/choojs/bankai) - RuviClass Client repository.
+- [FlavioCopes Blog](https://flaviocopes.com/) - Node.js, Express.js, REST API Backend by Postgres and much more.
+- [CharlieTheProgrammer](https://charlietheprogrammer.com/) - updated Node.js tutorials.
 
 ## 🤝 Contributing
 
-We love contributions! Check out the [Contribution guide](https://github.com/sourcerer-io/sourcerer-app/blob/master/CONTRIBUTING.md) for more information.
+We love contributions! Check out the [Contribution Guide](https://github.com/sourcerer-io/sourcerer-app/blob/master/CONTRIBUTING.md) for more information.
 
 ## 🎁 Support
 
