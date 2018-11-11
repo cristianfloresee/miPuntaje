@@ -68,8 +68,30 @@ async function createModule(req, res) {
     }
 }
 
+async function deleteModule(req, res) {
+    try {
+        console.log("entro al delete module");
+        const id_module = req.params.moduleId;
+
+        const text = 'DELETE FROM modules WHERE id_module = $1';
+        const values = [id_module];
+        const {
+            rows
+        } = await pool.query(text, values);
+        res.status(204).send();
+
+    } catch (error) {
+        console.log(`database ${error}`)
+        res.status(500).json({
+            success: false,
+            error
+        });
+    }
+}
+
+
 module.exports = {
     getModules,
     createModule,
-    //deleteModule
+    deleteModule
 }

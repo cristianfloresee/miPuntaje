@@ -9,7 +9,7 @@ var api = express.Router();
 api.get('/', moduleController.getModules);
 api.post('/create', moduleController.createModule);
 //api.put('/update/:calendarId', calendarController.updateCalendar);
-// api.delete('/delete/:calendarId', calendarController.deleteCalendar);
+api.delete('/delete/:moduleId', moduleController.deleteModule);
 // api.get('/count', calendarController.countCalendar);
 
 

@@ -92,16 +92,16 @@ async function createCalendar(req, res) {
 
     try {
 
-        const errors = validationResult(req).formatWith(val.errorFormatter);
+        // const errors = validationResult(req).formatWith(val.errorFormatter);
 
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                name: 'VALIDATION ERROR',
-                details: errors.array({
-                    onlyFirstError: true
-                })
-            });
-        }
+        // if (!errors.isEmpty()) {
+        //     return res.status(400).json({
+        //         name: 'VALIDATION ERROR',
+        //         details: errors.array({
+        //             onlyFirstError: true
+        //         })
+        //     });
+        // }
 
         const {
             year,
@@ -200,8 +200,8 @@ async function countCalendar(req, res) {
     try {
 
         //QUERY STRING
-        const year = string(req.query.year);
-        const semester = string(req.query.semester);
+        const year = req.query.year;
+        const semester = req.query.semester;
 
         //QUERY DATABASE
         const text = `SELECT count(*) FROM calendars`;

@@ -1,18 +1,24 @@
 'use strict'
 
+// ----------------------------------------
+// Load modules
+// ----------------------------------------
 const express = require('express');
 const calendarController = require('../../controllers').calendar;
-const validate = require('../../validations/calendar.validation');
+const validation = require('../../validations/calendar.validation');
+const validate = require('../../middlewares/validation-result');
 
 var api = express.Router();
 
+// ----------------------------------------
+// Routes and Controllers
+// ----------------------------------------
 api.get('/', calendarController.getCalendars);
 // api.get('/:userId', colorController.getColorsByUserId);
-api.post('/create', validate.createCalendar ,calendarController.createCalendar);
-api.put('/update/:calendarId', calendarController.updateCalendar);
+api.post('/create', validation.calendar, validate.checkResult, calendarController.createCalendar);
+api.put('/update/:calendarId', validation.calendar, validate.checkResult, calendarController.updateCalendar);
 api.delete('/delete/:calendarId', calendarController.deleteCalendar);
 api.get('/count', calendarController.countCalendar);
-
 
 module.exports = api;
 

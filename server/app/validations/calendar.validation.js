@@ -1,17 +1,23 @@
+'use strict'
+
+// ----------------------------------------
+// Load modules
+// ----------------------------------------
 const {
     check
 } = require('express-validator/check');
 
 module.exports = {
-    createCalendar: [
+    calendar: [
         check('year')
         .exists().withMessage('Year is a required field.')
-        .isLength({min: 4}).withMessage('Name must be at least 4 characters.')
-        .isInt().withMessage('Year must be an integer.'),
+        .isInt().withMessage('Year must be an integer.')
+        .isLength({min: 4, max:4}).withMessage('Year must be 4 numbers.'),
 
         check('semester')
         .exists().withMessage('Semester is a required field.')
         .isInt().withMessage('Semester must be an integer.')
+        .isLength({min: 4, max:4}).withMessage('Semester must be 4 numbers.'),
     ],
     errorFormatter: ({
         location,
@@ -30,35 +36,3 @@ module.exports = {
         }
     }
 }
-
-
-/*function validate(method) {
-
-    switch (method) {
-        case 'createCalendar':
-            {
-                body('year', 'Year is invalid.').exists(),
-                body('semester', 'Semester is invalid').exists().isInt(),
-                body('status').optional().isIn(['enabled', 'disabled'])
-            }
-    }
-    
-}
-
-function validateCalendar(req, res, next){
-    req.body('year', 'Invalid email').exists();
-    req.body('semester').exists().isInt();
-
-    const errors = req.validationErrors();
-    if(errors){
-
-    }
-}
-
-
-module.exports = {
-    validateCalendar,
-    validate
-};
-
-*/

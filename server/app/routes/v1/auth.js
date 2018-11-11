@@ -4,12 +4,9 @@
 // Load modules
 // ----------------------------------------
 const express = require('express');
-//const validate = require('express-validation');
-
-// ----------------------------------------
-// Load controllers
-// ----------------------------------------
 const authController = require('../../controllers').auth;
+const validation = require('../../validations/auth.validation');
+const validate = require('../../middlewares/validation-result');
 
 // ----------------------------------------
 // Define Express app
@@ -17,9 +14,9 @@ const authController = require('../../controllers').auth;
 var api = express.Router();
 
 // ----------------------------------------
-// Routes and controllers
+// Routes and Controllers
 // ----------------------------------------
-api.post('/login', authController.login);
+api.post('/login', validation.login, validate.checkResult, authController.login);
 //api.post('/signup', );
 //api.post('/forgot', );
 //api.post('/reset', );
@@ -27,7 +24,6 @@ api.post('/login', authController.login);
 
 module.exports = api;
 
-// .post(validate(paramValidation.login), authCtrl.login);
 
 /**
  * @api {post} v1/auth/refresh-token Refresh Token
