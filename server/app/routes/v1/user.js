@@ -7,6 +7,7 @@ var api = express.Router();
 
 api.get('/', checkToken, userController.getUsers);
 //api.get('/:page?', checkToken, userController.getUsers);
+api.get('/students', userController.getUsersStudents);
 api.get('/count', checkToken, userController.countUser);
 api.get('/:userId', userController.getUserByUserId);
 api.post('/create', userController.createUser);

@@ -10,15 +10,15 @@ app.use(file_upload());
 
 app.put('/upload/:fileType/:id', (req, res) => {
 
-    let file_type = req.params.fileType;
+    let file_type = req.params.fileType; //users /questions
     let id_file_type = req.params.id;
     if (!req.files) {
         return res.status(400).json({
-            success: false,
             message: 'no se ha seleccionado ningún archivo'
         })
     }
 
+    //VERIFICA SI ES UNA RUTA VÁLIDA PARA SUBIR IMAGEN
     let valid_file_types = ['users', 'questions'];
     if (valid_file_types.indexOf(file_type) < 0) {
         return res.status(400).json({
@@ -27,11 +27,13 @@ app.put('/upload/:fileType/:id', (req, res) => {
         })
     }
 
+    //OBTIENE LA EXTENSIÓN DEL ARCHIVO
     let file = req.files.file;
     let file_separation = file.name.split('.');
     let file_extension = file_separation[file_separation.length - 1];
     let valid_file_extensions = ['png', 'jpg', 'gif', 'jpeg'];
 
+    //ENVIA ERROR SI LA EXTENSIÓN NO ES SOPORTADA
     if (valid_file_extensions.indexOf(file_extension) < 0) {
         return res.status(400).json({
             success: false,
@@ -39,9 +41,10 @@ app.put('/upload/:fileType/:id', (req, res) => {
         })
     }
 
-    // CAMBIAR NOMBRE DE ARCHIVO
+    // CAMBIAR NOMBRE DEL ARCHIVO
     let file_name = `${id_file_type}-${new Date().getMilliseconds()}.${file_extension}`
 
+    //GUARDAR EL ARCHIVO
     file.mv(`uploads/${file_type}/${file_name}`, (error) => {
         if (error) {
             return res.status(500).json({
@@ -50,6 +53,7 @@ app.put('/upload/:fileType/:id', (req, res) => {
             })
         }
 
+        //CONSULTAR SI EXISTE EL ID
         if(file_type == 'users'){
             userImage(id_file_type, res, file_name);
         }
@@ -67,7 +71,6 @@ async function userImage(id_user, res, file_name) {
         if (rows_search.length == 0) {
             deleteFile(file_name, 'users')
             return res.status(400).json({
-                success: false,
                 message: `user ${id_user} does not exists`
             })
         }

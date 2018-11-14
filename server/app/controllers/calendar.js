@@ -6,10 +6,10 @@
 const status = require('http-status');
 //const uuid4 = require('uuid/v4');
 const pool = require('../database');
-const {
-    validationResult
-} = require('express-validator/check');
-const val = require('../validations/calendar.validation')
+// const {
+//     validationResult
+// } = require('express-validator/check');
+// const val = require('../validations/calendar.validation')
 
 //FRAGMENTOS DE CONSULTA
 const CALENDARS = 'SELECT id_calendar, year, semester, created_at, updated_at, count(*) OVER() AS count FROM calendars';

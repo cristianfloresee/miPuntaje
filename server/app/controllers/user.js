@@ -1,9 +1,10 @@
 'use strict'
 
-//LIBRERÍAS*************************************************************************************
+// ----------------------------------------
+// Load modules
+// ----------------------------------------
 const bcrypt = require('bcrypt-nodejs');
 const pool = require('../database');
-
 
 
 //SEGMENTOS DE CONSULTA*************************************************************************
@@ -45,6 +46,8 @@ async function getUsers(req, res) {
         const role = Number(req.query.role);
         const status = req.query.status;
 
+
+
         let values = [limit, from];
         let query;
 
@@ -62,7 +65,6 @@ async function getUsers(req, res) {
         if (status) {
             query += `u.active = $${values.length + 1}`;
             values.push(status);
-            console.log("status...");
         }
 
 
@@ -117,6 +119,30 @@ async function getUserByUserId(req, res) {
     }
 }
 
+async function getUsersStudents(req, res) {
+    try {
+        console.log("entre marica");
+        const document_no = req.query.document_no;
+        const id_course = req.query.id_course;
+
+        //const text = 'SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no FROM user_role AS r INNER JOIN users AS u ON r.id_user = u.id_user WHERE id_role = 3 AND document_no = $1';
+        const text = `SELECT r.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.username, u.email, CASE WHEN EXISTS (SELECT cu.id_user FROM course_student AS cu WHERE cu.id_user = u.id_user AND id_course = $1) THEN TRUE ELSE FALSE END AS enrolled FROM user_role AS r INNER JOIN users AS u ON r.id_user = u.id_user WHERE id_role = 3 AND document_no = $2`;
+        const values = [id_course, document_no];
+        const {
+            rows
+        } = await pool.query(text, values);
+        res.json({
+            items: rows
+        })
+
+    } catch (error) {
+        console.log("ERROR: ", error);
+        res.status(500).json({
+            message: 'error in obtaining users2',
+            error
+        });
+    }
+}
 async function createUser(req, res) {
 
     const client = await pool.pool.connect();
@@ -202,7 +228,7 @@ async function createUser(req, res) {
                         message: `this email has been taken`
                     })
                 default:
-                //HASHEA LA PASSWORD
+                    //HASHEA LA PASSWORD
                     let salt = bcrypt.genSaltSync(10);
 
                     //INICIA LA TRANSACCIÓN
@@ -303,9 +329,9 @@ async function updateUser(req, res) {
             }
 
             const result_update = await Promise.all(promises);
-           
-            result_update.map(result=>{
-                if(result.command == 'DELETE'){ 
+
+            result_update.map(result => {
+                if (result.command == 'DELETE') {
                     console.log(result);
                     console.log(`result.rowCount: ${result.rowCount}, delete_roles.length: ${delete_roles.length}`)
                     //if(result.rowCount != delete_roles.length)
@@ -521,6 +547,7 @@ function formatRolesArray(array_roles, id_user) {
 module.exports = {
     getUsers,
     getUserByUserId,
+    getUsersStudents,
     createUser,
     updateUser,
     deleteUser,

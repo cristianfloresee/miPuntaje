@@ -15,8 +15,8 @@ CREATE TABLE users
 	password VARCHAR(255) NOT NULL,
 	active BOOLEAN NOT NULL DEFAULT TRUE,
 	profile_image VARCHAR(50),
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_user PRIMARY KEY (id_user)
 );
 
@@ -29,8 +29,8 @@ CREATE TABLE calendars
 	id_calendar SMALLSERIAL,
 	year SMALLINT NOT NULL,
 	semester SMALLINT NOT NULL,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_calendar PRIMARY KEY (id_calendar),
 	CONSTRAINT uq_calendar UNIQUE(year, semester)
 );
@@ -43,8 +43,8 @@ CREATE TABLE subjects
 (
 	id_subject SERIAL,
 	name VARCHAR(30) NOT NULL UNIQUE,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_subject PRIMARY KEY (id_subject)
 );
 
@@ -76,8 +76,8 @@ CREATE TABLE courses
 	course_goal SMALLINT DEFAULT 0,
 	student_goal SMALLINT DEFAULT 0,
 	active BOOLEAN NOT NULL DEFAULT true,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_course PRIMARY KEY (id_course),
 	CONSTRAINT uq_code_course UNIQUE (code),
 	CONSTRAINT fk_course__calendar FOREIGN KEY (id_calendar) REFERENCES calendars(id_calendar) ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -107,8 +107,8 @@ CREATE TABLE modules
 	id_course INTEGER NOT NULL,
 	name VARCHAR(30) NOT NULL,
 	position SMALLINT,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_module PRIMARY KEY (id_module),
 	CONSTRAINT fk_module__course FOREIGN KEY (id_course) REFERENCES courses(id_course) ON UPDATE CASCADE ON DELETE RESTRICT,
 	CONSTRAINT uq_module__name UNIQUE(id_course, name),
@@ -126,8 +126,8 @@ CREATE TABLE classes
 	description VARCHAR(100),
 	status BOOLEAN NOT NULL DEFAULT FALSE,
 	date TIMESTAMP,
-   	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+   	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_class PRIMARY KEY (id_class),
 	CONSTRAINT fk_class__module FOREIGN KEY (id_module) REFERENCES modules(id_module) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -142,8 +142,8 @@ CREATE TABLE activities
 	id_class INTEGER NOT NULL,
 	name VARCHAR(30) NOT NULL UNIQUE,
 	status BOOLEAN NOT NULL DEFAULT FALSE,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_activity PRIMARY KEY (id_activity),
 	CONSTRAINT fk_activity__class FOREIGN KEY (id_class) REFERENCES classes(id_class) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -159,8 +159,8 @@ CREATE TABLE categories
 	id_user	INTEGER NOT NULL,
 	id_subject	INTEGER NOT NULL,
 	name VARCHAR(30) NOT NULL,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_category PRIMARY KEY (id_category),
 	CONSTRAINT fk_category__user_subject FOREIGN KEY (id_user, id_subject) REFERENCES user_subject(id_user, id_subject) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -174,8 +174,8 @@ CREATE TABLE subcategories
 	id_subcategory SERIAL,
 	id_category INTEGER NOT NULL,
 	name VARCHAR(30) NOT NULL,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_subcategory PRIMARY KEY (id_subcategory),
 	CONSTRAINT fk_subcategory__category FOREIGN KEY (id_category) REFERENCES categories(id_category) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -191,8 +191,8 @@ CREATE TABLE questions
 	description VARCHAR(30) NOT NULL,
 	difficulty SMALLINT NOT NULL,
 	shared BOOLEAN DEFAULT FALSE,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_question PRIMARY KEY (id_question),
 	CONSTRAINT fk_question__subcategory FOREIGN KEY (id_subcategory) REFERENCES subcategories(id_subcategory) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -224,27 +224,29 @@ CREATE TABLE roles
 -- Table structure for user_course
 -- ----------------------------
 DROP TABLE IF EXISTS user_course;
-CREATE TABLE course_student
+CREATE TABLE course_user
 (
 	id_user INTEGER NOT NULL,
 	id_course INTEGER NOT NULL,
-	CONSTRAINT pk_course_student PRIMARY KEY (id_course, id_user),
-	CONSTRAINT fk_course_student__user FOREIGN KEY (id_user) REFERENCES users(id_user),
-	CONSTRAINT fk_course_student__course FOREIGN KEY (id_course) REFERENCES courses(id_course)
+	disabled BOOLEAN NOT NULL DEFAULT FALSE,
+	enrollment_time TIMESTAMP NOT NULL DEFAULT NOW(),
+	CONSTRAINT pk_course_user PRIMARY KEY (id_course, id_user),
+	CONSTRAINT fk_course_user__user FOREIGN KEY (id_user) REFERENCES users(id_user),
+	CONSTRAINT fk_course_user__course FOREIGN KEY (id_course) REFERENCES courses(id_course)
 );
 
 -- ----------------------------
--- Table structure for activity_student
+-- Table structure for activity_user
 -- ----------------------------
-DROP TABLE IF EXISTS activity_student;
-CREATE TABLE activity_student
+DROP TABLE IF EXISTS activity_user;
+CREATE TABLE activity_user
 (
 	id_user INTEGER NOT NULL,
 	id_activity INTEGER NOT NULL,
 	status BOOLEAN NOT NULL DEFAULT FALSE,
-	CONSTRAINT pk_activity_student PRIMARY KEY (id_user, id_activity),
-	CONSTRAINT fk_activity_student__user FOREIGN KEY (id_user) REFERENCES users(id_user),
-	CONSTRAINT fk_activity_student__activity FOREIGN KEY (id_activity) REFERENCES activities(id_activity)
+	CONSTRAINT pk_activity_user PRIMARY KEY (id_user, id_activity),
+	CONSTRAINT fk_activity_user__user FOREIGN KEY (id_user) REFERENCES users(id_user),
+	CONSTRAINT fk_activity_user__activity FOREIGN KEY (id_activity) REFERENCES activities(id_activity)
 );
 
 -- ----------------------------

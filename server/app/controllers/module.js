@@ -83,7 +83,30 @@ async function deleteModule(req, res) {
     } catch (error) {
         console.log(`database ${error}`)
         res.status(500).json({
-            success: false,
+            error
+        });
+    }
+}
+
+async function updateModule(req, res) {
+    try {
+        console.log("update module..");
+        const id_module = req.params.moduleId;
+        const {
+            name
+        } = req.body;
+
+        const text = 'UPDATE modules SET name = $1 WHERE id_module = $2 RETURNING id_module, id_course, name, position, created_at, updated_at';
+        const values = [name, id_module];
+        const { rows } = await pool.query(text, values);
+
+        res.json(rows[0])
+
+
+        res.status()
+    } catch (error) {
+        console.log(`database ${error}`)
+        res.status(500).json({
             error
         });
     }
@@ -93,5 +116,6 @@ async function deleteModule(req, res) {
 module.exports = {
     getModules,
     createModule,
-    deleteModule
+    deleteModule,
+    updateModule
 }
