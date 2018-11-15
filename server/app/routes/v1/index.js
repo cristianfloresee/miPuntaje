@@ -29,6 +29,9 @@ const app = express();
 // ----------------------------------------
 // Routes
 // ----------------------------------------
+//const file_upload = require('express-fileupload');
+
+//app.use(file_upload());
 app.use(auth);
 app.use('/colors', colors);
 app.use('/users', users);
@@ -40,8 +43,8 @@ app.use('/courses', courses);
 app.use('/questions', questions);
 app.use('/modules', modules);
 app.use('/enrollments', enrollments);
-app.use(require('./upload'));
-app.use(require('./images'));
+//app.use(require('./upload'));
+//app.use(require('./images'));
 app.use(function(err,req,res,next) {
     console.log(err.stack);
     res.status(500).send({"Error" : err.stack});

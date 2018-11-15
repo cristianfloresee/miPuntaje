@@ -94,7 +94,9 @@ async function transaction(q) {
     const res = (await pool.query(text, values)).rows[0];
     console.log(` [+] database is running on ${res.client_addr}:${config_db.port}... ${colors.green.bold('[OK]')}`)
   } catch (error) {
-    console.log(error)
+    //res no disponible en error...
+    console.log(` [+] database is running on :${config_db.port}... ${colors.red.bold('[ERROR]')}`)
+    //console.log(error)
   }
 })()
 

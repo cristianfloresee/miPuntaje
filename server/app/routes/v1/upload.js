@@ -48,7 +48,6 @@ app.put('/upload/:fileType/:id', (req, res) => {
     file.mv(`uploads/${file_type}/${file_name}`, (error) => {
         if (error) {
             return res.status(500).json({
-                success: false,
                 error
             })
         }

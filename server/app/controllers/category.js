@@ -25,6 +25,8 @@ async function getCategories(req, res) {
 
         const id_user = req.query.id_user;
         const id_subject = req.query.id_subject;
+
+        
         console.log(`kilawa.. id_user: ${id_user}, id_subject: ${id_subject}`);
         //OBTIENE LAS CATEGORIAS DE UN PROFESOR, PARA UNA ASIGNATURA ESPECÍFICA
         if(id_user && id_subject){

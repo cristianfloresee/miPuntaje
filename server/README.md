@@ -97,7 +97,7 @@
 
 ## Overview
 
-This is a boilerplate application for building REST APIs in Node.js using ES6 and Express. Intended for use with Postgres using Sequelize ORM.
+This is a REST API in Node.js using ES6 and Express. Intended for use with Postgres using node-postgres.
 
 ## 📦 Requirements & Installation 
 
@@ -153,7 +153,10 @@ non-scary. Choo embraces that.
 
 - [RuviClass Client](https://github.com/choojs/bankai) - RuviClass Client repository.
 - [FlavioCopes Blog](https://flaviocopes.com/) - Node.js, Express.js, REST API Backend by Postgres and much more.
-- [CharlieTheProgrammer](https://charlietheprogrammer.com/) - updated Node.js tutorials.
+- [CharlieTheProgrammer](https://charlietheprogrammer.com/) - Updated Node.js tutorials.
+- [Spanish Express.js Guide](http://expressjs.com/es/guide) - Official Guide.
+- [Node University](https://node.university/courses) - Premium Beginner/Advanced Courses.
+- [Node Express Boilerplate](https://github.com/kunalkapadia/express-mongoose-es6-rest-api) - Express.js Boilerplate.
 
 ## 🤝 Contributing
 

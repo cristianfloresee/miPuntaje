@@ -1,10 +1,12 @@
 'use strict'
 
-//GLOBAL CONFIG
+// ----------------------------------------
+// Global Config
+// ----------------------------------------
 require('./app/config/config');
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const eValidator = require('express-validator')
 const express = require('express');
@@ -13,8 +15,6 @@ const socket = require('socket.io');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const colors = require('colors');
-const PrettyError = require('pretty-error');
-//const path = require('path');
 const routes = require('./app/routes/v1');
 
 // ----------------------------------------
@@ -22,41 +22,64 @@ const routes = require('./app/routes/v1');
 // ----------------------------------------
 initWebServer();
 
+// ----------------------------------------
+// Middleware Log Errors
+// ----------------------------------------
+// function logErrors(err, req, res, next) {
+//     console.error(err.stack);
+//     next(err);
+// }
 
+// ----------------------------------------
+// Middleware HTTP Error Handler:
+// - Send Stacktrace only during Development.
+// ----------------------------------------
+// function errorHandler(error, req, res, next) {
+//     res.status(error.status | 500);
+//     res.json({
+//         message: error.message,
+//         stack: process.env.NODE_ENV === 'development' ? error.stack : {}
+//     });
+// }
+
+// ----------------------------------------
+// Init Web Server
+// ----------------------------------------
 function initWebServer() {
 
     let app = express();
     let httpServer = http.Server(app);
     let io = socket(httpServer);
-    let pe = new PrettyError();
-    pError(pe)
     let num_connections = 0;
 
-    //CARGA DE MIDDLEWARES
-    app.use(cors({
-        origin: '*'
-    }));
+    
+    //app.use(express.static('uploads '));
     app.use(bodyParser.urlencoded({
         extended: false
     })); //CONFIGURACIÓN DE BODYPARSER
     app.use(bodyParser.json()); //CONVIERTE LA INFO QUE RECIBA DE PETICIÓN A JSON
+    app.use(cors({
+        origin: '*'
+    }));
     app.use(eValidator());
 
     // if (process.env.NODE_ENV === 'development') {
-    //     // only use in development
+    // only use in development
     //     app.use(errorhandler({log: errorNotification}))
     //   }
 
-   
+
     // ----------------------------------------
-    // Mount api v1 routes /v1
+    // Mount API v1 routes /v1
     // ----------------------------------------
     app.use(routes);
-    app.use(function(err,req,res,next) {
-        console.log(err.stack);
-        res.status(500).send({"Error" : err.stack});
-      });
-    
+    // app.use((req, res, next) => {
+    //     const error = new Error("Not found");
+    //     error.status = 404;
+    //     next(error);
+    // });
+    //app.use(logErrors);
+    //app.use(errorHandler);
 
     (async () => {
         try {
@@ -64,7 +87,6 @@ function initWebServer() {
 
             const address = server.address();
             const host = address.address;
-            //con
             const port = address.port;
             console.log(` [+] webserver is running on ${host}${port}... ${colors.green.bold('[OK]')}`)
 
@@ -79,16 +101,9 @@ function initWebServer() {
                 })
 
             })
-        } catch (err) {
-            console.log(pe.render(err));
+        } catch (error) {
+            console.log(err);
         }
 
     })()
-}
-
-function pError(pe) {
-    pe.skipNodeFiles();
-    pe.skipPackage('express');
-    pe.skipPath('internal/process/next_tick.js')
-    pe.skipPath('bootstrap_node.js')
 }
