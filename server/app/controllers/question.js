@@ -1,20 +1,18 @@
 'use strict'
-
+      
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const pool = require('../database');
 const path = require('path');
-const utils = require('../services/upload');
-//const multer = require('multer');
-//FRAGMENTOS DE CONSULTA
-//const SUBCATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
-const SUBCATEGORY_OPTIONS = `SELECT id_subcategory, name FROM subcategories`;
-const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
-//const multe = require('../middlewares/upload').upload;
-//const upload = multe.single('image');
 const multer = require('multer');
-
+const utils = require('../services/upload');
+const IMAGE_EXTS = ['image/gif','image/jpeg', 'image/jpg', 'image/svg+xml', 'image/svg', 'image/png', 'image/x-png', 'image/pjpeg'];
+const QN_IMPORT_EXTS = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+      
+// ----------------------------------------
+// Multer: Storage Configuration
+// ----------------------------------------
 const storageUpload = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/images/users')
@@ -24,15 +22,20 @@ const storageUpload = multer.diskStorage({
     }
 });
 
+// ----------------------------------------
+// Multer: Filter File Extensions
+// ----------------------------------------
 const filterUpload = function (req, file, cb) {
-    //file.mimeType === 'image/jpeg' || file.mimeType === 'image/png'
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-        //SEND ERROR EXTENSIÓN NO VÁLIDA...
-        return cb(new Error('Only image files are allowed!'), false);
+    if (IMAGE_EXTS.includes(file.mimeType)) {
+        return cb(new Error('Only image files are allowed!'), false); //Fix this error. Send readable error!
     }
     cb(null, true);
 };
 
+// ----------------------------------------
+// Multer: Init Multer
+// + initMulter(storageDest, fileSize, extsAllowed)
+// ----------------------------------------
 const upload = multer({
     storage: storageUpload,
     limits: {
@@ -41,6 +44,13 @@ const upload = multer({
     fileFilter: filterUpload
 }).single('image');
 
+
+
+//FRAGMENTOS DE CONSULTA
+//const SUBCATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
+const SUBCATEGORY_OPTIONS = `SELECT id_subcategory, name FROM subcategories`;
+const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
+//const upload = multe.single('image');
 
 
 async function getQuestions(req, res) {
@@ -119,22 +129,22 @@ async function getQuestions(req, res) {
     }
 }
 
+
+
+
+
+
 async function createQuestion(req, res) {
 
     upload(req, res, async (error) => {
 
-        if (error) { //se producira solo si se envia una imagen
+        if (error) { 
             return res.status(500).send({
-                message: 'Error on multer...',
+                message: 'Error on multer',
             })
         }
-        //if(req.files[0]) //para múltiples archivos
-        // if (req.file !== undefined) {
-        //     console.log("imagen provided..");
-
-        // } else {
-        //     console.log("no image provided or error");
-        // }
+        const file_name = req.file !== undefined ? req.file.filename : undefined;
+        const file_path = req.file !== undefined ? req.file.path : undefined;
 
         try {
             const {
@@ -142,25 +152,25 @@ async function createQuestion(req, res) {
                 description,
                 difficulty
             } = req.body;
-            const file_path = req.file !== undefined ? req.file.filename : undefined;
-
+            
             const text = 'INSERT INTO questions(id_subcategory, description, difficulty, image) VALUES($1, $2, $3, $4) RETURNING *';
-            const values = [id_subcategory, description, difficulty, file_path];
+            const values = [id_subcategory, description, difficulty, file_name];
             const {
                 rows
             } = await pool.query(text, values);
             res.status(201).send(rows[0]);
-        } catch (err) {
+        } catch (error) {
             if (file_path) utils.deleteFile(file_path);
             console.log(`${error}`)
             res.status(500).json({
                 message: 'Server error'
             })
         }
+    });
 
+}
 
-
-
+async function updateQuestion(req, res){
         // const text1 = 'SELECT id_subcategory FROM subcategories WHERE id_subcategory = $1';
         // const values1 = [id_subcategory];
         // const rows_search = (await pool.query(text1, values1)).rows;
@@ -171,34 +181,7 @@ async function createQuestion(req, res) {
         //         message: `subcategory ${id_subcategory} does not exists`
         //     })
         // }
-
-
-
-        // res.status(201).send(rows[0]);
-
-
-        //     } catch (error) {
-        //         console.log(`${error}`)
-        //         res.status(500).json({
-        //             message: error.message,
-        //             code: error.code,
-        //             severity: error.severity
-        //         })
-
-        //     }
-
-
-        // } else {
-        //     console.log(`${error}`)
-        //     //ERROR INTERNO AL SUBIR LA IMAGEN
-        //     res.status(500).send();
-        //     //EXTENSIÓN INVÁLIDA
-        //     //res.status(400).send();
-        // }
-    });
-
 }
-
 
 async function deleteSubcategory(req, res) {
     try {

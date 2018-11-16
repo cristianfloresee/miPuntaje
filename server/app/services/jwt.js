@@ -1,8 +1,14 @@
 'use strict'
 
+// ----------------------------------------
+// Load Modules
+// ----------------------------------------
 const moment = require('moment');
 const secret = 'secret_string_crsoq';
 
+// ----------------------------------------
+// Create Token Function
+// ----------------------------------------
 exports.createToken = function (user) {
     var payload = {
         sub: user._id,
