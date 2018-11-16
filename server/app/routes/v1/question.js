@@ -13,7 +13,7 @@ const questionController = require('../../controllers').question;
 var api = express.Router();
 
 // ----------------------------------------
-// Routes and controllers
+// Routes and Controllers
 // ----------------------------------------
 
 api.get('/', questionController.getQuestions);

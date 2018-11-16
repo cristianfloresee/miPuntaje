@@ -9,7 +9,7 @@ const secret = 'secret_string_crsoq';
 // ----------------------------------------
 // Create Token Function
 // ----------------------------------------
-exports.createToken = function (user) {
+function createToken(user) {
     var payload = {
         sub: user._id,
         name: user.name,
@@ -20,6 +20,12 @@ exports.createToken = function (user) {
         iat: moment().unix(),
         exp: moment().add(30, 'days').unix()
     }
-
     return jwt.encode(payload, secret)
 };
+
+// ----------------------------------------
+// Module Exports
+// ----------------------------------------
+module.exports = {
+    createToken
+}
