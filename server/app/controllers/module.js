@@ -1,5 +1,8 @@
 'use strict'
 
+// ----------------------------------------
+// Load Modules
+// ----------------------------------------
 const pool = require('../database');
 
 async function getModules(req, res) {
@@ -10,16 +13,13 @@ async function getModules(req, res) {
 
         console.log(`id_course: ${id_course}`);
         if (id_course) {
-            const text = `SELECT id_module, id_course, name, position, created_at, updated_at, count(*) OVER() AS count FROM modules WHERE id_course = $1`;
+            const text = `SELECT id_module, id_course, name, position, created_at, updated_at FROM modules WHERE id_course = $1`;
             const values = [id_course];
             const {
                 rows
             } = await pool.query(text, values);
-            const total = rows.length != 0 ? rows[0].count : 0;
-            res.json({
-                total,
-                results: rows
-            })
+            //const total_items = rows.length != 0 ? rows[0].count : 0;
+            res.json(rows)
         } else {
             res.status(400).json({
                 message: 'send all necessary fields'
@@ -27,11 +27,7 @@ async function getModules(req, res) {
         }
 
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            message: 'error in obtaining calendars',
-            error
-        });
+        next({ error });
     }
 }
 
@@ -58,13 +54,7 @@ async function createModule(req, res) {
             })
         }
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            //message: 'error when saving the color',
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        })
+        next({ error });
     }
 }
 
@@ -78,13 +68,10 @@ async function deleteModule(req, res) {
         const {
             rows
         } = await pool.query(text, values);
-        res.status(204).send();
+        res.sendStatus(204);
 
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500).json({
-            error
-        });
+        next({ error });
     }
 }
 
@@ -105,14 +92,13 @@ async function updateModule(req, res) {
 
         res.status()
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500).json({
-            error
-        });
+        next({ error });
     }
 }
 
-
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     getModules,
     createModule,

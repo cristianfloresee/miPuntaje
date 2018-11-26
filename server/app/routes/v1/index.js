@@ -1,7 +1,7 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const express = require('express');
 const status = require('http-status');
@@ -20,6 +20,8 @@ const courses = require('./course');
 const questions = require('./question');
 const modules = require('./module');
 const enrollments = require('./enrollment');
+const lessons = require('./lesson');
+const activities = require('./activity');
 
 // ----------------------------------------
 // Define express app
@@ -27,7 +29,7 @@ const enrollments = require('./enrollment');
 const app = express();
 
 // ----------------------------------------
-// Routes
+// Routes and Controllers
 // ----------------------------------------
 //const file_upload = require('express-fileupload');
 
@@ -43,17 +45,21 @@ app.use('/courses', courses);
 app.use('/questions', questions);
 app.use('/modules', modules);
 app.use('/enrollments', enrollments);
+app.use('/lessons', lessons);
+app.use('/activities', activities);
+
 //app.use(require('./upload'));
 //app.use(require('./images'));
-app.use(function(err,req,res,next) {
-    console.log(err.stack);
-    res.status(500).send({"Error" : err.stack});
-  });
+// app.use(function(err,req,res,next) {
+//     console.log(err.stack);
+//     res.status(500).send({"Error" : err.stack});
+//   });
+
 
 module.exports = app;
 
 // ----------------------------------------
-// Server status
+// Server Status
 // ----------------------------------------
 app.get('/status', (req, res) => res.send('OK'));
 

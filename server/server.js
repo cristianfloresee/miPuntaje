@@ -15,32 +15,13 @@ const socket = require('socket.io');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const colors = require('colors');
-const routes = require('./app/routes/v1');
+const _routes = require('./app/routes/v1');
+const _error = require('./app/middlewares/error');
 
 // ----------------------------------------
 // Start HTTP server
 // ----------------------------------------
 initWebServer();
-
-// ----------------------------------------
-// Middleware Log Errors
-// ----------------------------------------
-// function logErrors(err, req, res, next) {
-//     console.error(err.stack);
-//     next(err);
-// }
-
-// ----------------------------------------
-// Middleware HTTP Error Handler:
-// - Send Stacktrace only during Development.
-// ----------------------------------------
-// function errorHandler(error, req, res, next) {
-//     res.status(error.status | 500);
-//     res.json({
-//         message: error.message,
-//         stack: process.env.NODE_ENV === 'development' ? error.stack : {}
-//     });
-// }
 
 // ----------------------------------------
 // Init Web Server
@@ -52,34 +33,23 @@ function initWebServer() {
     let io = socket(httpServer);
     let num_connections = 0;
 
-    
+
     //app.use(express.static('uploads '));
     app.use(bodyParser.urlencoded({
         extended: false
-    })); //CONFIGURACIÓN DE BODYPARSER
-    app.use(bodyParser.json()); //CONVIERTE LA INFO QUE RECIBA DE PETICIÓN A JSON
+    })); 
+    app.use(bodyParser.json());
     app.use(cors({
         origin: '*'
     }));
     app.use(eValidator());
 
-    // if (process.env.NODE_ENV === 'development') {
-    // only use in development
-    //     app.use(errorhandler({log: errorNotification}))
-    //   }
-
-
     // ----------------------------------------
-    // Mount API v1 routes /v1
+    // Mount API Routes /v1
     // ----------------------------------------
-    app.use(routes);
-    // app.use((req, res, next) => {
-    //     const error = new Error("Not found");
-    //     error.status = 404;
-    //     next(error);
-    // });
-    //app.use(logErrors);
-    //app.use(errorHandler);
+    app.use(_routes);
+    app.use(_error.logErrors);
+    app.use(_error.handler);
 
     (async () => {
         try {

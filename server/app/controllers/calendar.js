@@ -6,17 +6,16 @@
 const status = require('http-status');
 //const uuid4 = require('uuid/v4');
 const pool = require('../database');
-// const {
-//     validationResult
-// } = require('express-validator/check');
-// const val = require('../validations/calendar.validation')
+
 
 //FRAGMENTOS DE CONSULTA
 const CALENDARS = 'SELECT id_calendar, year, semester, created_at, updated_at, count(*) OVER() AS count FROM calendars';
 const CALENDARS_OPTIONS = `SELECT id_calendar, year, semester FROM calendars`;
 const PAGINATION = ' ORDER BY id_calendar LIMIT $1 OFFSET $2';
 
-
+// ----------------------------------------
+// Get Calendars
+// ----------------------------------------
 async function getCalendars(req, res) {
     try {
 
@@ -77,32 +76,16 @@ async function getCalendars(req, res) {
         });
 
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            message: 'error in obtaining calendars',
-            error
-        });
+        next({ error});
     }
 }
 
-/**
- * @apiSuccess (200) {Object} mixed `User` object
- */
+// ----------------------------------------
+// Create Calendar
+// ----------------------------------------
 async function createCalendar(req, res) {
 
     try {
-
-        // const errors = validationResult(req).formatWith(val.errorFormatter);
-
-        // if (!errors.isEmpty()) {
-        //     return res.status(400).json({
-        //         name: 'VALIDATION ERROR',
-        //         details: errors.array({
-        //             onlyFirstError: true
-        //         })
-        //     });
-        // }
-
         const {
             year,
             semester
@@ -116,22 +99,13 @@ async function createCalendar(req, res) {
 
 
     } catch (error) {
-        console.log(`${error}`)
-        res.status(status.INTERNAL_SERVER_ERROR)
-            .send({
-                //message: 'error when saving the color',
-                message: error.message,
-                code: error.code,
-                severity: error.severity
-            })
+        next({ error});
     }
 }
 
-/**
- * 
- * @param {object} req 
- * @param {object} res 
- */
+// ----------------------------------------
+// Update Calendar
+// ----------------------------------------
 async function updateCalendar(req, res) {
     try {
         const id_calendar = req.params.calendarId;
@@ -143,11 +117,10 @@ async function updateCalendar(req, res) {
         const text1 = 'SELECT id_calendar FROM calendars WHERE id_calendar = $1';
         const values1 = [id_calendar];
         const res1 = (await pool.query(text1, values1)).rows[0];
+        // next({ status: 404, message: 'Calendar not Found.' })
         if (!res1) {
             return res.status(status.NOT_FOUND)
-                .send({
-                    message: 'calendar not found'
-                })
+                .send({ message: 'calendar not found' })
         }
 
         const text2 = 'UPDATE calendars SET year = $1, semester = $2 WHERE id_calendar = $3 RETURNING id_calendar, year, semester, created_at, updated_at';
@@ -156,22 +129,13 @@ async function updateCalendar(req, res) {
         res.json(res2)
 
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(status.INTERNAL_SERVER_ERROR)
-            .send({
-                message: error.message,
-                code: error.code,
-                severity: error.severity
-            });
+        next({ error});
     }
 }
 
-/**
- * 
- * @success {String}  tokenType     Access Token's type
- * @success {String}  accessToken   Authorization Token
- * @error (Bad Request 400) ValidationError:  Some parameters may contain invalid values
- */
+// ----------------------------------------
+// Delete Calendar
+// ----------------------------------------
 async function deleteCalendar(req, res) {
     try {
         const id_calendar = req.params.calendarId;
@@ -180,51 +144,36 @@ async function deleteCalendar(req, res) {
         const {
             rows
         } = await pool.query(text, values);
-        res.status(204).send();
+        res.sendStatus(204);
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error});
     }
 }
 
-
-/**
- * @API GET v1/calendars/count
- * @DESCRIPTION Get 
- * @ERROR
- */
+// ----------------------------------------
+// Get Count Calendar
+// ----------------------------------------
 async function countCalendar(req, res) {
     try {
-
-        //QUERY STRING
         const year = req.query.year;
         const semester = req.query.semester;
 
-        //QUERY DATABASE
-        const text = `SELECT count(*) FROM calendars`;
+        const text = 'SELECT count(*) FROM calendars';
         const {
             rows
         } = await pool.query(text);
 
-        //HTTP RESPONSE
-        console.log(rows);
         res.json({
             total_items: rows[0].count
         });
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error});
     }
 }
 
-
-
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     getCalendars,
     createCalendar,
@@ -232,24 +181,3 @@ module.exports = {
     deleteCalendar,
     countCalendar
 }
-
-
-/** MODELO Y VALIDACIÓN
- 
-const productSchema = Joi.object().keys({
-  name: Joi.required(),
-  price: Joi.required(),
-  weight: Joi.required()
-});
-
-// …
-
-app.post("/products", async (req, res) => {
-  const { error } = Joi.validate(req.body, productSchema, { abortEarly: false });
-  if (error) {
-    const errorMessage = error.details.map(({ message, context }) => { message, context });
-    return res.status(400).send({ data: errorMessage });
-  }
-});
-
- */

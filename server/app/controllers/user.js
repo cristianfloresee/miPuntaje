@@ -1,7 +1,7 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const bcrypt = require('bcrypt-nodejs');
 const pool = require('../database');
@@ -35,7 +35,11 @@ const USERS_ROLES_WFILTER =
     INNER JOIN (${ROLES_FILTER}) AS r 
     ON u.id_user = r.id_user`;
 
-//FUNCIONES************************************************************************************
+
+    
+// ----------------------------------------
+// Get Users
+// ----------------------------------------
 async function getUsers(req, res) {
     try {
         const from = Number(req.query.from || 0);
@@ -96,11 +100,7 @@ async function getUsers(req, res) {
             total
         })
     } catch (error) {
-        console.log("ERROR: ", error);
-        res.status(500).json({
-            message: 'error in obtaining users1',
-            error
-        });
+        next({ error });
     }
 }
 
@@ -112,16 +112,13 @@ async function getUserByUserId(req, res) {
         } = await pool.query('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at FROM users WHERE id_user = $1', [id_user]);
         res.json(rows)
     } catch (error) {
-        res.status(500).json({
-            message: 'error in obtaining users2',
-            error
-        });
+        next({ error });
     }
 }
 
 async function getUsersStudents(req, res) {
     try {
-        console.log("entre marica");
+       
         const document_no = req.query.document_no;
         const id_course = req.query.id_course;
 
@@ -136,11 +133,7 @@ async function getUsersStudents(req, res) {
         })
 
     } catch (error) {
-        console.log("ERROR: ", error);
-        res.status(500).json({
-            message: 'error in obtaining users2',
-            error
-        });
+        next({ error });
     }
 }
 async function createUser(req, res) {
@@ -263,11 +256,7 @@ async function createUser(req, res) {
             })
         }
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            message: 'error when saving the user',
-            error
-        })
+        next({ error });
     } finally {
         client.release();
     }
@@ -365,11 +354,7 @@ async function updateUser(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.log(`error: ${error}`)
-        res.status(500).json({
-            success: false,
-            error: error
-        });
+        next({ error });
     } finally {
         client.release();
     }
@@ -386,8 +371,7 @@ async function deleteUser(req, res) {
             message: 'successfully deleted user'
         });
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(204).send()
+        next({ error });
     }
 }
 
@@ -401,11 +385,7 @@ async function disableUser(req, res) {
             message: 'successfully disabled user'
         });
     } catch (error) {
-        console.log(`database ${error}`)
-        res.json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 // function login(req, res) {
@@ -503,11 +483,7 @@ async function countUser(req, res) {
             result: rows[0].count
         });
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 
@@ -544,6 +520,9 @@ function formatRolesArray(array_roles, id_user) {
     return [values1, values2]
 }
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     getUsers,
     getUserByUserId,

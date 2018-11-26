@@ -1,13 +1,9 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const express = require('express');
-
-// ----------------------------------------
-// Load controllers
-// ----------------------------------------
 const questionController = require('../../controllers').question;
 
 var api = express.Router();
@@ -15,7 +11,6 @@ var api = express.Router();
 // ----------------------------------------
 // Routes and Controllers
 // ----------------------------------------
-
 api.get('/', questionController.getQuestions);
 //api.get('/:userId', colorController.getColorsByUserId);
 api.post('/create', questionController.createQuestion);
@@ -23,5 +18,7 @@ api.post('/create', questionController.createQuestion);
 //api.delete('/delete/:subcategoryId', subcategoryController.deleteSubcategory);
 //api.get('/count', categoryController.countCategory);
 
-
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = api;

@@ -1,5 +1,8 @@
 'use strict'
 
+// ----------------------------------------
+// Load Modules
+// ----------------------------------------
 const pool = require('../database');
 
 async function getEnrollments(req, res) {
@@ -17,13 +20,7 @@ async function getEnrollments(req, res) {
         res.json(res1)
 
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500)
-            .send({
-                message: error.message,
-                code: error.code,
-                severity: error.severity
-            });
+        next({ error });
     }
 
 }
@@ -54,13 +51,7 @@ async function createEnrollment(req, res) {
             })
         }
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            //message: 'error when saving the color',
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        })
+        next({ error });
     }
 }
 
@@ -79,13 +70,7 @@ async function getEnrollmentsByCourseId(req, res) {
         })
 
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500)
-            .send({
-                message: error.message,
-                code: error.code,
-                severity: error.severity
-            });
+        next({ error });
     }
 }
 
@@ -103,13 +88,7 @@ async function updateEnrollment(req, res) {
         res.status(204).send();
 
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            //message: 'error when saving the color',
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        })
+        next({ error });
     }
 
 }
@@ -125,24 +104,21 @@ async function deleteEnrollment(req, res) {
         const id_course = req.params.courseId;
         const id_user = req.params.userId;
 
-        const text = `DELETE FROM course_student WHERE id_course = $1 AND id_user = $2`;
+        const text = 'DELETE FROM course_student WHERE id_course = $1 AND id_user = $2';
         const values = [id_course, id_user];
-
         await pool.query(text, values);
-        res.status(204).send();
+
+        res.sendStatus(204);
 
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            //message: 'error when saving the color',
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        })
+        next({ error });
     }
 }
 
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     //getCalendars,
     getEnrollments,

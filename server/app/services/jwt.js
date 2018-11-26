@@ -4,7 +4,7 @@
 // Load Modules
 // ----------------------------------------
 const moment = require('moment');
-const secret = 'secret_string_crsoq';
+const SECRET = 'secret_string_crsoq';
 
 // ----------------------------------------
 // Create Token Function
@@ -20,11 +20,11 @@ function createToken(user) {
         iat: moment().unix(),
         exp: moment().add(30, 'days').unix()
     }
-    return jwt.encode(payload, secret)
+    return jwt.encode(payload, SECRET)
 };
 
 // ----------------------------------------
-// Module Exports
+// Export Modules
 // ----------------------------------------
 module.exports = {
     createToken

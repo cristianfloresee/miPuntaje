@@ -1,6 +1,8 @@
 'use strict'
 
-//LIBRERIAS
+// ----------------------------------------
+// Load Modules
+// ----------------------------------------
 const pool = require('../database');
 //CONSULTAS
 const SUBJECTS = `SELECT id_subject, name, created_at, updated_at FROM subjects`;
@@ -15,11 +17,11 @@ async function getSubjects(req, res) {
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
         const teacher_options = req.query.teacher_options;
-        
+
 
         //OBTIENE LOS NOMBRES DE LAS ASIGNATURAS EN DONDE EL PROFESOR HA CREADO CURSOS (PARA EL SELECTOR)
-        if(teacher_options){
-            const text = `SELECT s.id_subject, s.name FROM subjects AS s INNER JOIN user_subject AS us ON s.id_subject=us.id_subject WHERE us.id_user = $1 ORDER BY name`; 
+        if (teacher_options) {
+            const text = `SELECT s.id_subject, s.name FROM subjects AS s INNER JOIN user_subject AS us ON s.id_subject=us.id_subject WHERE us.id_user = $1 ORDER BY name`;
             const values = [teacher_options]
             const { rows } = await pool.query(text, values);
             return res.send(rows)
@@ -28,7 +30,7 @@ async function getSubjects(req, res) {
 
         let values, query;
         let promises = [];
-    
+
         if ((from != undefined) && limit) {
             values = [limit, from];
             query = SUBJECTS;
@@ -45,23 +47,13 @@ async function getSubjects(req, res) {
         }
 
 
-        const  { rows }  = (await Promise.all(promises))[0];
+        const { rows } = (await Promise.all(promises))[0];
 
-        // console.log("query: ", query);
-        // console.log("values: ", values);
-        // console.log("rows: ", rows)
-        // const {
-        //     rows
-        // } = await pool.query(query, values);
         res.json({
             subjects: rows
         })
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500).json({
-            message: 'error in obtaining subjects',
-            error: error
-        })
+        next({ error});
     }
 }
 
@@ -78,13 +70,7 @@ async function createSubject(req, res) {
         res.json({ message: 'successfully created subject' })
 
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            //message: 'error when saving the color',
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        })
+        next({ error});
     }
 }
 
@@ -101,12 +87,7 @@ async function updateSubject(req, res) {
         res.json(rows)
 
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500).json({
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        });
+        next({ error });
     }
 }
 
@@ -118,32 +99,29 @@ async function countSubject(req, res) {
         });
     }
     catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 
 async function deleteSubject(req, res) {
     try {
         const id_subject = req.params.subjectId;
+
+        const text = 'DELETE FROM subjects WHERE id_subject = $1';
+        const values = [id_subject];
         const {
             rows
-        } = await pool.query('DELETE FROM subjects WHERE id_subject = $1', [id_subject]);
-        res.json({
-            message: 'successfully deleted subject'
-        });
+        } = await pool.query(text, values);
+
+        res.sendStatus(204);
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     getSubjects,
     createSubject,

@@ -1,3 +1,6 @@
+// ----------------------------------------
+// Load Modules
+// ----------------------------------------
 const user = require('./user');
 const color = require('./color');
 const calendar = require('./calendar');
@@ -7,10 +10,16 @@ const auth = require('./auth');
 const subject = require('./subject');
 const course = require('./course');
 const question = require('./question');
-const class_module = require('./module');
+const _module = require('./module');
 const enrollment = require('./enrollment');
+const _lesson = require('./lesson');
+const _activity = require('./activity');
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
+    _activity,
     user,
     color,
     calendar,
@@ -20,6 +29,7 @@ module.exports = {
     auth,
     subject,
     question,
-    class_module,
+    _module,
+    _lesson,
     enrollment
 };

@@ -87,11 +87,7 @@ async function getQuestions(req, res) {
             results: rows
         })
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            message: 'error in obtaining calendars',
-            error
-        });
+        next({ error });
     }
 }
 
@@ -121,7 +117,7 @@ async function createQuestion(req, res) {
             res.status(201).send(rows[0]);
         } catch (error) {
             if (file_path) _file.deleteFile(file_path);
-            res.sendStatus(500);
+            next({ error });
         }
     });
 
@@ -157,7 +153,7 @@ async function updateQuestion(req, res) {
             }
 
             console.log("eliminando foto vieja: ", res1[0].image)
-            if(file_path) _file.deleteFile(res1[0].image);
+            if (file_path) _file.deleteFile(res1[0].image);
             const text2 = 'UPDATE questions SET id_subcategory = $1, description = $2, difficulty = $3, image = $4 RETURNING *';
             const values2 = [id_subcategory, description, difficulty, file_path];
             const res2 = await (pool.query(text2, values2)).rows[0];
@@ -165,7 +161,7 @@ async function updateQuestion(req, res) {
 
         } catch (error) {
             if (file_path) _file.deleteFile(file_path);
-            next(error);
+            next({ error });
         }
     });
 }
@@ -184,7 +180,7 @@ async function deleteQuestion(req, res) {
         res.sendStatus(204);
 
     } catch (error) {
-        next(error);
+        nnext({ error });
     }
 }
 

@@ -12,11 +12,14 @@
 // ----------------------------------------
 // Load modules
 // ----------------------------------------
-
 const Pool = require('pg').Pool;
 const colors = require('colors');
-const config_db = require('../config/config');
-const pool = new Pool(config_db);
+const _config_db = require('../config/config');
+
+// ----------------------------------------
+// Init DB Pool
+// ----------------------------------------
+const pool = new Pool(_config_db);
 
 
 /*
@@ -79,28 +82,31 @@ async function transaction(q) {
 */
 
 // ----------------------------------------
-// Create Database Tables
+// Create Database Tables (Read SQL File)
 // ----------------------------------------
-
+//++
 
 // ----------------------------------------
 // Database Status
 // ----------------------------------------
+//++
 
 (async () => {
   try {
     const text = `SELECT * FROM pg_stat_activity WHERE datname = $1`;
-    const values = [config_db.database];
+    const values = [_config_db.database];
     const res = (await pool.query(text, values)).rows[0];
-    console.log(` [+] database is running on ${res.client_addr}:${config_db.port}... ${colors.green.bold('[OK]')}`)
+    console.log(` [+] database is running on ${res.client_addr}:${_config_db.port}... ${colors.green.bold('[OK]')}`)
   } catch (error) {
     //res no disponible en error...
-    console.log(` [+] database is running on :${config_db.port}... ${colors.red.bold('[ERROR]')}`)
+    console.log(` [+] database is running on :${_config_db.port}... ${colors.red.bold('[ERROR]')}`)
     //console.log(error)
   }
 })()
 
-
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool

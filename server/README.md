@@ -187,3 +187,22 @@ Thanks to:
 
 ## 🎓 License
 Usage is provided under the [MIT©](https://tldrlegal.com/license/mit-license) License.
+
+## Consultas
+
+```sql
+
+SELECT m.name, c.id_class, c.id_module, c.description, c.status, c.date, c.created_at, c.updated_at
+FROM modules AS m
+INNER JOIN (
+  SELECT id_class, id_module, description, status, date, created_at, updated_at 
+  FROM classes
+  WHERE id_module IN( 
+    SELECT id_module 
+    FROM modules 
+    WHERE id_course = 2
+  )
+) AS c
+ON m.id_module = c.id_module;
+
+```

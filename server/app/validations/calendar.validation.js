@@ -1,11 +1,12 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const {
     check
 } = require('express-validator/check');
+
 
 module.exports = {
     calendar: [
@@ -36,3 +37,7 @@ module.exports = {
         }
     }
 }
+
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------

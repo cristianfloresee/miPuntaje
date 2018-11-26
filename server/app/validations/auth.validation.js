@@ -1,7 +1,7 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const check = require('express-validator/check').check;
 
@@ -17,7 +17,7 @@ const login = [
 ];
 
 // ----------------------------------------
-// Module Exports
+// Export Modules
 // ----------------------------------------
 module.exports = {
     login

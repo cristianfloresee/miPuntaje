@@ -84,10 +84,7 @@ async function userImage(id_user, res, file_name) {
         })
 
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 
@@ -109,10 +106,7 @@ async function questionImage(id_question, res, file_name){
         })
 
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 

@@ -1,7 +1,7 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const express = require('express');
 const calendarController = require('../../controllers').calendar;
@@ -20,6 +20,9 @@ api.put('/update/:calendarId', validation.calendar, validate.checkResult, calend
 api.delete('/delete/:calendarId', calendarController.deleteCalendar);
 api.get('/count', calendarController.countCalendar);
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = api;
 
 

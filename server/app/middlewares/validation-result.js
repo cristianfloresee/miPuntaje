@@ -12,6 +12,18 @@ function checkResult(req, res, next) {
 
     const errors = validationResult(req).formatWith(errorFormatter);
     if (!errors.isEmpty()) {
+        // next({
+        //     status: 400,
+        //     json: {
+        //         name: 'VALIDATION ERROR',
+        //         details: errors.array({ onlyFirstError: true })
+        //     }
+        // })
+
+        // next({error})
+
+        // next({status: 400, error: error , message: ''})
+
         return res.status(400).json({
             name: 'VALIDATION ERROR',
             details: errors.array({
@@ -44,7 +56,7 @@ const errorFormatter = ({
 }
 
 // ----------------------------------------
-// Module Exports
+// Export Modules
 // ----------------------------------------
 module.exports = {
     checkResult

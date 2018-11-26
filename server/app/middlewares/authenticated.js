@@ -1,11 +1,16 @@
 'use strict'
 
+// ----------------------------------------
+// Load Modules
+// ----------------------------------------
 const jwt = require('jsonwebtoken');
 const status = require('http-status');
 const pool = require('../database');
 
+// ----------------------------------------
+// Check Token
+// ----------------------------------------
 let checkToken = (req, res, next) => {
-//    console.log("token: ", token);
     if (!req.headers.authorization) {
         return res.status(status.UNAUTHORIZED)
             .send({
@@ -14,7 +19,6 @@ let checkToken = (req, res, next) => {
     }
 
     let token = req.get('authorization');
-    console.log("token: ", token);
     jwt.verify(token, process.env.SEED, (error, decoded) => {
         if (error) {
             return res.status(status.UNAUTHORIZED)
@@ -28,33 +32,12 @@ let checkToken = (req, res, next) => {
 
 }
 
-
-
-// ============================
-// Verifica Token de Imagen
-// ============================
-let checkTokenImage = (req, res, next) => {
-
-    let token = req.query.authorization;
-
-    console.log("token image: ", token);
-    jwt.verify(token, process.env.SEED, (error, decoded) => {
-        if (error) {
-            return res.status(401)
-                .json({
-                    error: 'invalid token'
-                })
-        }
-        req.user = decoded.user;
-        next();
-    })
-}
-
-// ============================
-// Verifica Role Administrador
-// ============================
+// ----------------------------------------
+// Check Role
+// ----------------------------------------
 async function checkAdminRole(req, res, next) {
 
+    let role = 1;
     try {
         let user = req.user_payload;
         const text = 'SELECT role FROM roles WHERE id_user = $1 AND role = $2';
@@ -69,13 +52,15 @@ async function checkAdminRole(req, res, next) {
         }
         next();
     } catch (error) {
-
+        next({ error });
     }
 
 }
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     checkToken,
-    checkTokenImage,
     checkAdminRole
 }

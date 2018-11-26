@@ -1,7 +1,7 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const pool = require('../database');
 
@@ -10,8 +10,9 @@ const CATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, u
 const CATEGORIES_OPTIONS = `SELECT id_category, name FROM categories`;
 const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
 
-
-
+// ----------------------------------------
+// Get Categories
+// ----------------------------------------
 async function getCategories(req, res) {
 
     try {
@@ -26,10 +27,10 @@ async function getCategories(req, res) {
         const id_user = req.query.id_user;
         const id_subject = req.query.id_subject;
 
-        
+
         console.log(`kilawa.. id_user: ${id_user}, id_subject: ${id_subject}`);
         //OBTIENE LAS CATEGORIAS DE UN PROFESOR, PARA UNA ASIGNATURA ESPECÍFICA
-        if(id_user && id_subject){
+        if (id_user && id_subject) {
             const text = `SELECT id_category, name FROM categories WHERE id_user = $1 AND id_subject = $2;`;
             const values = [id_user, id_subject];
             console.log("chorizo: ", text);
@@ -48,7 +49,7 @@ async function getCategories(req, res) {
         }
 
 
-        if(teacher_options){
+        if (teacher_options) {
             const query = `${CATEGORIES_OPTIONS} WHERE id_user = $1 ORDER BY name`;
             const values = [teacher_options]
             const { rows } = await pool.query(query, values);
@@ -69,13 +70,12 @@ async function getCategories(req, res) {
             }
             query += `${PAGINATION}`;
 
-        } 
+        }
         else {
             query = `${CATEGORIES_OPTIONS} ORDER BY name`;
-        } 
-        
-        //console.log("QUERY: ", query);
-        //console.log("VALUE: ", values);
+        }
+
+
         const { rows } = await pool.query(query, values);
 
 
@@ -86,14 +86,13 @@ async function getCategories(req, res) {
             results: rows
         })
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            message: 'error in obtaining calendars',
-            error
-        });
+        next({ error });
     }
 }
 
+// ----------------------------------------
+// Create Category
+// ----------------------------------------
 async function createCategory(req, res) {
 
     try {
@@ -104,10 +103,11 @@ async function createCategory(req, res) {
         } = req.body;
 
         if (id_user && id_subject && name) {
-
+            const text = 'INSERT INTO categories(id_user, id_subject, name) VALUES($1, $2, $3)';
+            const values = [id_user, id_subject, name]
             const {
                 rows
-            } = await pool.query('INSERT INTO categories(id_user, id_subject, name) VALUES($1, $2, $3)', [id_user, id_subject, name]);
+            } = await pool.query(text, values);
             res.status(201).send(rows[0])
         } else {
             res.status(400).json({
@@ -115,34 +115,28 @@ async function createCategory(req, res) {
             })
         }
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            //message: 'error when saving the color',
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        })
+        next({ error });
     }
 }
 
-
+// ----------------------------------------
+// Delete Category
+// ----------------------------------------
 async function deleteCategory(req, res) {
     try {
         const id_category = req.params.categoryId;
-
-        const { rows } = await pool.query('DELETE FROM categories WHERE id_category = $1', [id_category]);
-        res.status(204).send();
-
+        const text = 'DELETE FROM categories WHERE id_category = $1';
+        const values = [id_category];
+        await pool.query(text, values);
+        res.sendStatus(204);
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 
-
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     getCategories,
     createCategory,

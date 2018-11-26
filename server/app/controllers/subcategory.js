@@ -1,5 +1,8 @@
 'use strict'
 
+// ----------------------------------------
+// Load Modules
+// ----------------------------------------
 const pool = require('../database');
 
 //FRAGMENTOS DE CONSULTA
@@ -71,11 +74,7 @@ async function getSubcategories(req, res) {
             results: rows
         })
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            message: 'error in obtaining calendars',
-            error
-        });
+        next({ error });
     }
 }
 
@@ -99,34 +98,30 @@ async function createSubcategory(req, res) {
             })
         }
     } catch (error) {
-        console.log(`${error}`)
-        res.status(500).json({
-            //message: 'error when saving the color',
-            message: error.message,
-            code: error.code,
-            severity: error.severity
-        })
+        next({ error });
     }
 }
 
-
+// ----------------------------------------
+// Delete Subcategory
+// ----------------------------------------
 async function deleteSubcategory(req, res) {
     try {
         const id_subcategory = req.params.subcategoryId;
 
-        const { rows } = await pool.query('DELETE FROM subcategories WHERE id_subcategory = $1', [id_subcategory]);
-        res.status(204).send();
+        const text = 'DELETE FROM subcategories WHERE id_subcategory = $1';
+        const values = [id_subcategory]
+        const { rows } = await pool.query(text, values);
+        res.sendStatus(204);
 
     } catch (error) {
-        console.log(`database ${error}`)
-        res.status(500).json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 
-
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     getSubcategories,
     createSubcategory,

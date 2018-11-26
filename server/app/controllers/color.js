@@ -1,71 +1,47 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const pool = require('../database');
 
-// =====================================================
-// Obtiene todos los COLORES
-// =====================================================
+// ----------------------------------------
+// Get Colors
+// ----------------------------------------
 async function getColors(req, res, next) {
     try {
-        const text = 'SELECT id_color, name, hexadecimal FROM coors ORDER BY name ASC';
+        const text = 'SELECT id_color, name, hexadecimal FROM colors ORDER BY name ASC';
         const {
             rows
         } = await pool.query(text);
-        res.json({
-            colors: rows
-        })
+        res.json(rows)
     } catch (error) {
-        return next(error);
-
-        // res.status(500).json({
-        //     message: 'error in obtaining colors',
-        //     error: {
-        //         message: error.message,
-        //         code: error.code,
-        //         severity: error.severity
-        //     }
-        // });
-        
+        next({ error });
     }
 }
 
-// =====================================================
-// Obtiene los COLORES de un USUARIO
-// =====================================================
+// ----------------------------------------
+// Get Colors by User ID
+// ----------------------------------------
 async function getColorsByUserId(req, res) {
 
     try {
         const id_user = req.params.userId
 
-        
         const text = 'SELECT id_color, name, haxadecimal FROM colors WHERE id_color IN (SELECT id_color FROM user_subject_color WHERE id_user = $1)';
         const values = [id_user];
         const {
             rows
         } = await pool.query(text, values);
-        res.json({
-            success: true,
-            colors: rows
-        })
+        res.json(rows)
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'error in obtaining user colors',
-            error: {
-                message: error.message,
-                code: error.code,
-                severity: error.severity
-            }
-        });
+        next({ error });
     }
 }
 
-// =====================================================
-// Crea un COLOR
-// =====================================================
+// ----------------------------------------
+// Create a Color
+// ----------------------------------------
 async function createColor(req, res) {
 
     try {
@@ -100,22 +76,13 @@ async function createColor(req, res) {
             })
         }
     } catch (error) {
-        res.status(500).json({
-            message: 'error when saving the color',
-            success: false,
-            error: {
-                message: error.message,
-                code: error.code,
-                severity: error.severity,
-                detail: error.detail
-            }
-        })
+        next({ error });
     }
 }
 
-// =====================================================
-// Actualiza un COLOR
-// =====================================================
+// ----------------------------------------
+// Update a Color
+// ----------------------------------------
 async function updateColor(req, res) {
     try {
         const id_color = req.params.colorId;
@@ -145,34 +112,23 @@ async function updateColor(req, res) {
                 });
             } else {
                 res.status(500).json({
-                    success: false,
                     message: 'this color does not exist'
                 });
             }
 
         } else {
             res.status(400).json({
-                success: false,
                 message: 'send all necessary fields'
             })
         }
     } catch (error) {
-        console.log(`database ${error}`)
-        res.json({
-            success: false,
-            error: {
-                message: error.message,
-                code: error.code,
-                severity: error.severity,
-                detail: error.detail
-            }
-        });
+        next({ error });
     }
 }
 
-// =====================================================
-// Elimina un COLOR
-// =====================================================
+// ----------------------------------------
+// Delete a Color
+// ----------------------------------------
 async function deleteColor(req, res) {
     try {
         const id_color = req.params.colorId;
@@ -182,16 +138,9 @@ async function deleteColor(req, res) {
         const {
             rows
         } = await pool.query(text, values);
-        res.json({
-            success: true,
-            message: 'successfully deleted color'
-        });
+        res.sendStatus(204);
     } catch (error) {
-        console.log(`database ${error}`)
-        res.json({
-            success: false,
-            error
-        });
+        next({ error });
     }
 }
 
@@ -234,9 +183,11 @@ function checkColorExists(name, hexadecimal) {
         }
     })
 
-
 }
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     getColors,
     getColorsByUserId,

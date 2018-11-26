@@ -1,14 +1,16 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const status = require('http-status');
 const pool = require('../database');
 
-
+// ----------------------------------------
+// Login
+// ----------------------------------------
 async function login(req, res) {
     try {
         const {
@@ -50,8 +52,8 @@ async function login(req, res) {
         let token = jwt.sign({
             user: user
         }, process.env.SEED, {
-            expiresIn: process.env.TOKEN_EXPIRATION
-        });
+                expiresIn: process.env.TOKEN_EXPIRATION
+            });
 
         res.json({
             token,
@@ -59,15 +61,13 @@ async function login(req, res) {
         })
 
     } catch (error) {
-        console.log(error);
-        res.status(status.INTERNAL_SERVER_ERROR)
-            .send({
-                message: 'error in login',
-                error
-            });
+        next({ error});
     }
 }
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = {
     login
 }

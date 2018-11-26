@@ -1,7 +1,7 @@
 'use strict'
 
 // ----------------------------------------
-// Load modules
+// Load Modules
 // ----------------------------------------
 const express = require('express');
 const authController = require('../../controllers').auth;
@@ -22,6 +22,9 @@ api.post('/login', validation.login, validate.checkResult, authController.login)
 //api.post('/reset', );
 
 
+// ----------------------------------------
+// Export Modules
+// ----------------------------------------
 module.exports = api;
 
 

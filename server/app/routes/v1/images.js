@@ -1,7 +1,6 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { checkTokenImage } = require('../../middlewares/authenticated');
 const { checkToken } = require('../../middlewares/authenticated');
 const app = express();
 
