@@ -29,7 +29,7 @@ function cleanStack(stack) {
 // + Send Logs only during Development.
 //----------------------------------------
 function logErrors(error, req, res, next) {
-    if (process.env.NODE_ENV === 'development') console.log(pe.render(error.error));
+    if (process.env.NODE_ENV === 'development') console.log(error) //console.log(pe.render(error.error)); 
     next(error);
 }
 

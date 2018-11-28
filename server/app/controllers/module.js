@@ -5,7 +5,7 @@
 // ----------------------------------------
 const pool = require('../database');
 
-async function getModules(req, res) {
+async function getModules(req, res, next) {
     try {
         const {
             id_course,
@@ -31,6 +31,29 @@ async function getModules(req, res) {
     }
 }
 
+// ----------------------------------------
+// Get Modules as Select Options
+// ----------------------------------------
+async function getModuleOptions(req, res, next) {
+    try {
+        // Query Params
+        const id_course = req.query.id_course; // Required  
+
+        // Obtiene los Modulos
+        const text = 'SELECT id_module, name FROM modules WHERE id_course = $1';
+        const values = [id_course];
+        const { rows } = await pool.query(text, values);
+
+        // Envía la Respuesta
+        res.json(rows);
+    } catch (error) {
+        next({ error });
+    }
+}
+
+// ----------------------------------------
+// Create Module
+// ----------------------------------------
 async function createModule(req, res) {
 
     try {
@@ -58,9 +81,12 @@ async function createModule(req, res) {
     }
 }
 
+// ----------------------------------------
+// Elimina un Modulo
+// ----------------------------------------
 async function deleteModule(req, res) {
     try {
-        console.log("entro al delete module");
+        // Params
         const id_module = req.params.moduleId;
 
         const text = 'DELETE FROM modules WHERE id_module = $1';
@@ -75,10 +101,14 @@ async function deleteModule(req, res) {
     }
 }
 
+
+// ----------------------------------------
+// Actualiza un Modulo
+// ----------------------------------------
 async function updateModule(req, res) {
     try {
-        console.log("update module..");
         const id_module = req.params.moduleId;
+        // Body Params
         const {
             name
         } = req.body;
@@ -87,10 +117,8 @@ async function updateModule(req, res) {
         const values = [name, id_module];
         const { rows } = await pool.query(text, values);
 
+        // Envía la Respuesta
         res.json(rows[0])
-
-
-        res.status()
     } catch (error) {
         next({ error });
     }
@@ -101,6 +129,7 @@ async function updateModule(req, res) {
 // ----------------------------------------
 module.exports = {
     getModules,
+    getModuleOptions,
     createModule,
     deleteModule,
     updateModule

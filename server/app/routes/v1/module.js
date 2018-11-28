@@ -10,11 +10,11 @@ var api = express.Router();
 // ----------------------------------------
 // Routes and Controllers
 // ----------------------------------------
-//api.get('/', calendarController.getCalendars);
 api.get('/', moduleController.getModules);
-api.post('/create', moduleController.createModule);
-api.put('/update/:moduleId', moduleController.updateModule);
-api.delete('/delete/:moduleId', moduleController.deleteModule);
+api.get('/select_options', moduleController.getModuleOptions); //Opciones para el Selector
+api.post('/create', moduleController.createModule); // -Corregir
+api.put('/update/:moduleId', moduleController.updateModule); // -Corregir
+api.delete('/delete/:moduleId', moduleController.deleteModule); // -Corregir
 // api.get('/count', calendarController.countCalendar);
 
 // ----------------------------------------
