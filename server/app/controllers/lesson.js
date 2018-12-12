@@ -17,9 +17,10 @@ async function getLessons(req, res, next) {
         const page_size = req.query.page_size || 20;
         const page = req.query.page || 1;
 
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
 
-        console.log("id_module: ", id_module);
-        // Obtiene las Clases
+        // Obtiene las clases
         const text = `SELECT m.name AS module, c.id_class, c.id_module, c.description, c.status, c.date, c.created_at, c.updated_at 
         FROM modules AS m 
         INNER JOIN classes AS c 
@@ -29,15 +30,24 @@ async function getLessons(req, res, next) {
         AND ($3::bool IS NULL OR c.status = $3) 
         LIMIT $4 
         OFFSET $5`;
-        const values = [id_course, id_module, status, page_size, (page - 1) * page_size];
+        const values = [id_course, id_module, status, page_size, from];
         const { rows } = await pool.query(text, values);
 
-        // Obtiene la cantidad total de Clases (de acuerdo a los Parámetros de Filtro)
-        const text2 = 'SELECT count(*) FROM classes WHERE ($1::int IS NULL OR id_module = $1) AND ($2::int IS NULL OR id_module IN (SELECT id_module FROM modules WHERE id_course = $2)) AND ($3::bool IS NULL OR status = $3) ';
+        // Obtiene la cantidad total de clases (de acuerdo a los parámetros de filtro)
+        const text2 = `
+        SELECT count(*) 
+        FROM classes 
+        WHERE ($1::int IS NULL OR id_module = $1) 
+        AND ($2::int IS NULL OR id_module IN (
+            SELECT id_module 
+            FROM modules 
+            WHERE id_course = $2)
+            ) 
+        AND ($3::bool IS NULL OR status = $3)`;
         const values2 = [id_module, id_course, status];
         const total_items = (await pool.query(text2, values2)).rows[0].count;
 
-        // Envía la Respuesta
+        // Envía la respuesta al cliente
         res.json({
             info: {
                 total_pages: Math.ceil(total_items / page_size),
@@ -61,8 +71,7 @@ async function getLessonOptions(req, res, next) {
         // Query Params
         const id_module = req.query.id_module; // Obligatorio por ahora    
 
-        console.log("lesson options: ", id_module);
-        // Obtiene las Clases
+        // Consulta que obtiene las clases
         const text = 'SELECT id_class, description FROM classes WHERE id_module = $1';
         const values = [id_module];
         const { rows } = await pool.query(text, values);
@@ -123,18 +132,21 @@ async function updateLesson(req, res, next) {
     }
 }
 
+// ----------------------------------------
+// Delete Lesson
+// ----------------------------------------
 async function deleteLesson(req, res, next) {
     
     try {
+        // Params
         const id_lesson = req.params.lessonId;
-        console.log("delete lesson: ", id_lesson);
 
-        // Ve si tiene Actividades asociadas
-
+        // Elimina la clase en base al 'id_lesson'
         const text = 'DELETE FROM classes WHERE id_class = $1';
         const values = [id_lesson];
         await pool.query(text, values);
 
+        // Envía la respuesta al cliente
         res.sendStatus(204);
     } catch (error) {
         next({ error });

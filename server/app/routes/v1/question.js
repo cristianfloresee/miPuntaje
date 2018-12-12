@@ -4,18 +4,19 @@
 // Load Modules
 // ----------------------------------------
 const express = require('express');
-const questionController = require('../../controllers').question;
+const _questionController = require('../../controllers').question;
 
 var api = express.Router();
 
 // ----------------------------------------
 // Routes and Controllers
 // ----------------------------------------
-api.get('/', questionController.getQuestions);
+api.get('/', _questionController.getQuestions);
+//api.get('/select_options', _questionController.getQuestionOptions); //Opciones para el Selector
 //api.get('/:userId', colorController.getColorsByUserId);
-api.post('/create', questionController.createQuestion);
-//api.put('/update/:categoryId', categoryController.updateCategory);
-//api.delete('/delete/:subcategoryId', subcategoryController.deleteSubcategory);
+api.post('/', _questionController.createQuestion); //arreglar
+api.put('/:questionId', _questionController.updateQuestion);
+api.delete('/:questionId', _questionController.deleteQuestion);
 //api.get('/count', categoryController.countCategory);
 
 // ----------------------------------------

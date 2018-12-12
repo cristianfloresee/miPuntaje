@@ -5,80 +5,83 @@
 // ----------------------------------------
 const pool = require('../database');
 
-//FRAGMENTOS DE CONSULTA
-//const SUBCATEGORIES = 'SELECT id_category, id_user, id_subject, name, created_at, updated_at, count(*) OVER() AS count FROM categories';
-const SUBCATEGORY_OPTIONS = `SELECT id_subcategory, name FROM subcategories`;
-const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
-
-
-
-async function getSubcategories(req, res) {
-
+// ----------------------------------------
+// Get Categories
+// ----------------------------------------
+async function getSubcategories(req, res, next) {
     try {
-        const subject = req.params.subject;
-        const teacher = req.params.teacher;
-        const search = req.query.search;
-        const category_options = req.query.category_options;
-        const from = Number(req.query.from);
-        const limit = Number(req.query.limit);
-        const last_by_techer = req.query.last_by_teacher;
+        // Query Params
+        const id_user = req.query.id_user; // Obligatorio
+        const id_subject = req.query.id_subject || null;
+        const id_category = req.query.id_category || null;
+        const page_size = req.query.page_size || 20;
+        const page = req.query.page || 1;
 
-        let values, query;
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
 
-        if (last_by_techer) {
-            const query = `SELECT su.name AS subject, c.name AS category, s.id_subcategory, s.name, s.created_at, s.updated_at FROM subcategories AS s INNER JOIN categories AS c ON s.id_category = c.id_category INNER JOIN subjects AS su ON su.id_subject = c.id_subject WHERE id_user = $1 ORDER BY s.updated_at DESC LIMIT 5;`;
-            const values = [last_by_techer];
-            const { rows } = await pool.query(query, values);
-            return res.send(rows)
-        }
+        // Obtiene las subcategorias
+        const text = `SELECT su.id_subject, su.name AS subject, c.id_category, c.name AS category, s.id_subcategory, s.name, s.created_at, s.updated_at 
+        FROM subcategories AS s 
+        INNER JOIN categories AS c 
+        ON s.id_category = c.id_category 
+        INNER JOIN subjects AS su 
+        ON su.id_subject = c.id_subject 
+        WHERE c.id_user = $1 
+        AND ($2::int IS NULL OR c.id_subject = $2)
+        AND ($3::int IS NULL OR c.id_category = $3)
+        ORDER BY s.updated_at DESC 
+        LIMIT $4
+        OFFSET $5`
+        const values = [id_user, id_subject, id_category, page_size, from];
+        const { rows } = await pool.query(text, values);
 
-        if (category_options) {
-            const query = `${SUBCATEGORY_OPTIONS} WHERE id_category = $1 ORDER BY name`;
-            const values = [category_options]
-            const { rows } = await pool.query(query, values);
-            return res.send(rows)
-        }
+        // Obtiene la cantidad total de clases (de acuerdo a los parámetros de filtro) ARREGLAR WOM!!
+        const text2 = `
+        SELECT count(*) 
+        FROM categories 
+        WHERE id_user = $1
+        AND ($2::int IS NULL OR id_subject = $2)`;
+        const values2 = [id_user, id_subject];
+        //const total_items = (await pool.query(text2, values2)).rows[0].count;
 
-        if ((from != undefined) && limit) {
-            query = CATEGORIES;
-            values = [limit, from];
-
-            if (subject || teacher || search) query += ` WHERE `;
-            if (subject) {
-                query += `id_subject = $${values.length + 1}`;
-                values.push(`${subject}`);
-            }
-            if (teacher) {
-                query += `id_user = $${values.length + 1}`;
-                values.push(`${teacher}`);
-            }
-            if (search) {
-                query += `name = $${values.length + 1}`;
-                values.push(`${search}`);
-            }
-            query += `${PAGINATION}`;
-
-        } else {
-            query = `${CATEGORIES_OPTIONS} ORDER BY name`;
-        }
-
-        console.log("QUERY: ", query);
-        console.log("VALUE: ", values);
-        const { rows } = await pool.query(query, values);
-
-
-        const total = rows.length != 0 ? rows[0].count : 0;
-
+        // Envía la respuesta al cliente
         res.json({
-            total,
-            results: rows
+            info: {
+                //total_pages: Math.ceil(total_items / page_size),
+                page: page,
+                page_size: page_size,
+                //total_items: parseInt(total_items),
+            },
+            items: rows
         })
     } catch (error) {
         next({ error });
     }
 }
 
-async function createSubcategory(req, res) {
+// ----------------------------------------
+// Get Categories as Select Options
+// ----------------------------------------
+async function getSubcategoryOptions(req, res, next) {
+    try {
+        // Query Params
+        //const id_user = req.query.id_user; // Obligatorio por ahora    
+        const id_category = req.query.id_category; // Obligatorio por ahora  
+
+        // Obtiene las categorías
+        const text = 'SELECT id_subcategory, name FROM subcategories WHERE id_category = $1 ORDER BY name';
+        const values = [id_category];
+        const { rows } = await pool.query(text, values);
+
+        // Envía la respuesta al cliente
+        res.json(rows);
+    } catch (error) {
+        next({ error });
+    }
+}
+
+async function createSubcategory(req, res, next) {
 
     try {
         const {
@@ -97,6 +100,29 @@ async function createSubcategory(req, res) {
                 message: 'send all necessary fields'
             })
         }
+    } catch (error) {
+        next({ error });
+    }
+}
+
+// ----------------------------------------
+// Update Category
+// ----------------------------------------
+async function updateSubcategory(req, res, next) {
+    try {
+        const id_subcategory = req.params.subcategoryId;
+        const {
+            id_category,
+            name
+        } = req.body;
+
+        // Comprobar si existe el registro antes??
+        const text2 = 'UPDATE subcategories SET id_category = $1, name = $2, updated_at = NOW() WHERE id_subcategory = $3';
+        const values2 = [id_category, name, id_subcategory];
+        const res2 = (await pool.query(text2, values2)).rows[0];
+
+        res.json(res2)
+
     } catch (error) {
         next({ error });
     }
@@ -124,6 +150,8 @@ async function deleteSubcategory(req, res) {
 // ----------------------------------------
 module.exports = {
     getSubcategories,
+    getSubcategoryOptions,
     createSubcategory,
+    updateSubcategory,
     deleteSubcategory
 }

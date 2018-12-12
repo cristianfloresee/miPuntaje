@@ -9,7 +9,7 @@ const SUBJECTS = `SELECT id_subject, name, created_at, updated_at FROM subjects`
 const SUBJECTS_OPTIONS = `SELECT id_subject, name FROM subjects`
 const PAGINATION = ` ORDER BY id_subject LIMIT $1 OFFSET $2`;
 
-async function getSubjects(req, res) {
+async function getSubjects2(req, res) {
     try {
 
         //PARÁMETROS DE FILTRO OPCIONAL:
@@ -26,7 +26,6 @@ async function getSubjects(req, res) {
             const { rows } = await pool.query(text, values);
             return res.send(rows)
         }
-
 
         let values, query;
         let promises = [];
@@ -53,14 +52,78 @@ async function getSubjects(req, res) {
             subjects: rows
         })
     } catch (error) {
-        next({ error});
+        next({ error });
     }
 }
 
 
+async function getSubjects(req, res, next) {
+    try {
+        // Query Params
+        const search = req.query.search || null;
+        const page_size = req.query.page_size || 20;
+        const page = req.query.page || 1;
+
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
+
+        // Obtiene las asignaturas
+        const text = `SELECT id_subject, name, created_at, updated_at 
+        FROM subjects
+        WHERE ($1::varchar IS NULL OR name LIKE $1)
+        ORDER BY updated_at
+        LIMIT $2
+        OFFSET $3`;
+        const values = [search, page_size, from];
+        const { rows } = await pool.query(text, values);
+
+        // Obtiene la cantidad total de asignaturas (de acuerdo a los parámetros de filtro)
+        const text2 = `
+         SELECT count(*) 
+         FROM subjects
+         WHERE ($1::varchar IS NULL OR name LIKE $1)`;
+        const values2 = [search];
+        const total_items = (await pool.query(text2, values2)).rows[0].count;
+
+        // Envía la respuesta al cliente
+        res.json({
+            info: {
+                total_pages: Math.ceil(total_items / page_size),
+                page: page,
+                page_size: page_size,
+                total_items: parseInt(total_items),
+            },
+            items: rows
+        })
+    } catch (error) {
+        next({ error });
+    }
+}
+
+async function getSubjectOptions(req, res, next) {
+    try {
+        // Query Params
+        const id_user = req.query.id_user || null;
+
+        // Obtiene las asignaturas como opción de selector
+        const text = `SELECT id_subject, name 
+        FROM subjects
+        WHERE ($1::int IS NULL OR id_subject IN (
+            SELECT id_subject 
+            FROM user_subject 
+            WHERE id_user = $1))
+         ORDER BY name`;
+        const values = [id_user];
+        const { rows } = await pool.query(text, values);
+
+        // Envía la respuesta al cliente
+        res.json(rows);
+    } catch (error) {
+        next({ error });
+    }
+}
 
 async function createSubject(req, res) {
-
     try {
         const {
             name
@@ -70,7 +133,7 @@ async function createSubject(req, res) {
         res.json({ message: 'successfully created subject' })
 
     } catch (error) {
-        next({ error});
+        next({ error });
     }
 }
 
@@ -124,6 +187,7 @@ async function deleteSubject(req, res) {
 // ----------------------------------------
 module.exports = {
     getSubjects,
+    getSubjectOptions,
     createSubject,
     updateSubject,
     deleteSubject,

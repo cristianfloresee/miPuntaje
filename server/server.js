@@ -10,6 +10,7 @@ require('./app/config/config');
 // ----------------------------------------
 const eValidator = require('express-validator')
 const express = require('express');
+const path = require('path');
 const http = require('http');
 const socket = require('socket.io');
 const bodyParser = require('body-parser');
@@ -17,6 +18,9 @@ const cors = require('cors');
 const colors = require('colors');
 const _routes = require('./app/routes/v1');
 const _error = require('./app/middlewares/error');
+
+
+//const serveIndex = require('serve-index');
 
 // ----------------------------------------
 // Start HTTP server
@@ -39,6 +43,7 @@ function initWebServer() {
         extended: false
     })); 
     app.use(bodyParser.json());
+    //app.use(express.static(path.resolve(__dirname, '../public'), { 'dotfiles': 'allow' }));
     app.use(cors({
         origin: '*'
     }));
@@ -48,6 +53,8 @@ function initWebServer() {
     // Mount API Routes /v1
     // ----------------------------------------
     app.use(_routes);
+    // app.use(express.static(__dirname + '/'));
+    // app.use('/uploads', serveIndex(__dirname + '/uploads'));
     app.use(_error.logErrors);
     app.use(_error.handler);
 

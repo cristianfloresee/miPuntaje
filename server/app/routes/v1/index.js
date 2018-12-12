@@ -20,8 +20,11 @@ const courses = require('./course');
 const questions = require('./question');
 const modules = require('./module');
 const enrollments = require('./enrollment');
+const workspaces = require('./workspace');
 const lessons = require('./lesson');
 const activities = require('./activity');
+const activityParticipation = require('./activity_participation');
+const images = require('./image');
 
 // ----------------------------------------
 // Define express app
@@ -45,11 +48,12 @@ app.use('/courses', courses);
 app.use('/questions', questions);
 app.use('/modules', modules);
 app.use('/enrollments', enrollments);
+app.use('/workspaces', workspaces);
 app.use('/lessons', lessons);
 app.use('/activities', activities);
-
-//app.use(require('./upload'));
-//app.use(require('./images'));
+app.use('/activity_participation', activityParticipation);
+//app.use('./upload');
+app.use('/uploads', images);
 // app.use(function(err,req,res,next) {
 //     console.log(err.stack);
 //     res.status(500).send({"Error" : err.stack});

@@ -11,11 +11,11 @@ var api = express.Router();
 // ----------------------------------------
 // Routes and Controllers
 // ----------------------------------------
+api.get('/select_options', categoryController.getCategoryOptions); //Opciones para el Selector
 api.get('/', categoryController.getCategories);
-//api.get('/:userId', colorController.getColorsByUserId);
-api.post('/create', categoryController.createCategory);
-//api.put('/update/:categoryId', categoryController.updateCategory);
-api.delete('/delete/:categoryId', categoryController.deleteCategory);
+api.post('/', categoryController.createCategory);
+api.put('/:categoryId', categoryController.updateCategory);
+api.delete('/:categoryId', categoryController.deleteCategory);
 //api.get('/count', categoryController.countCategory);
 
 // ----------------------------------------

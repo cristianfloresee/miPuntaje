@@ -8,6 +8,11 @@ const path = require('path');
 //DEFAULT OPTIONS
 app.use(file_upload());
 
+//uploads/images/questions/1542488957846.jpg
+app.get('/uploads/images', (req, res) => {
+    console.log("wuwuwuwuwuuw...");
+})
+
 app.put('/upload/:fileType/:id', (req, res) => {
 
     let file_type = req.params.fileType; //users /questions
@@ -110,11 +115,14 @@ async function questionImage(id_question, res, file_name){
     }
 }
 
+
 function deleteFile(image_name, file_type) {
     let image_path = path.resolve(__dirname, `../../../uploads/${file_type}/${image_name}`);
     if (fs.existsSync(image_path)) {
         fs.unlinkSync(image_path)
     }
 }
+
+
 
 module.exports = app;

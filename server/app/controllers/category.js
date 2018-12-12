@@ -13,17 +13,17 @@ const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
 // ----------------------------------------
 // Get Categories
 // ----------------------------------------
-async function getCategories(req, res) {
+/*async function getCategories(req, res, next) {
 
     try {
+        // Body Params
         const subject = req.params.subject;
         const teacher_options = req.params.teacher_options;
         const search = req.query.search;
         const from = Number(req.query.from);
         const limit = Number(req.query.limit);
         const last_by_techer = req.query.last_by_teacher;
-
-
+        // Params
         const id_user = req.query.id_user;
         const id_subject = req.query.id_subject;
 
@@ -49,6 +49,7 @@ async function getCategories(req, res) {
         }
 
 
+        //
         if (teacher_options) {
             const query = `${CATEGORIES_OPTIONS} WHERE id_user = $1 ORDER BY name`;
             const values = [teacher_options]
@@ -81,6 +82,7 @@ async function getCategories(req, res) {
 
         const total = rows.length != 0 ? rows[0].count : 0;
 
+        // Envía respuesta al client
         res.json({
             total,
             results: rows
@@ -89,11 +91,87 @@ async function getCategories(req, res) {
         next({ error });
     }
 }
+*/
+
+// Si necesito las últimas 5 del profe debo enviar page_size=5 y solo el user_id
+// ----------------------------------------
+// Get Categories
+// ----------------------------------------
+async function getCategories(req, res, next) {
+    try {
+        // Query Params
+        const id_user = req.query.id_user; // Obligatorio
+        const id_subject = req.query.id_subject || null;
+        const page_size = req.query.page_size || 20;
+        const page = req.query.page || 1;
+
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
+
+        // Obtiene las clases
+        const text = `SELECT s.id_subject, s.name AS subject, c.id_category, c.name, c.created_at, c.updated_at 
+        FROM categories AS c 
+        INNER JOIN subjects AS s 
+        ON s.id_subject = c.id_subject 
+        WHERE c.id_user = $1 
+        AND ($2::int IS NULL OR c.id_subject = $2) 
+        ORDER BY c.updated_at DESC 
+        LIMIT $3 
+        OFFSET $4`;
+        const values = [id_user, id_subject, page_size, from];
+        const { rows } = await pool.query(text, values);
+
+        // Obtiene la cantidad total de clases (de acuerdo a los parámetros de filtro)
+        const text2 = `
+        SELECT count(*) 
+        FROM categories 
+        WHERE id_user = $1
+        AND ($2::int IS NULL OR id_subject = $2)`;
+        const values2 = [id_user, id_subject];
+        const total_items = (await pool.query(text2, values2)).rows[0].count;
+
+        // Envía la respuesta al cliente
+        res.json({
+            info: {
+                total_pages: Math.ceil(total_items / page_size),
+                page: page,
+                page_size: page_size,
+                total_items: parseInt(total_items),
+            },
+            items: rows
+        })
+    } catch (error) {
+        next({ error });
+    }
+}
+
+
+// ----------------------------------------
+// Get Categories as Select Options
+// ----------------------------------------
+async function getCategoryOptions(req, res, next) {
+    try {
+        // Query Params
+        const id_user = req.query.id_user; // Obligatorio por ahora    
+        const id_subject = req.query.id_subject; // Obligatorio por ahora  
+
+        // Obtiene las categorías
+        const text = 'SELECT id_category, name FROM categories WHERE id_user = $1 AND id_subject = $2 ORDER BY name';
+        const values = [id_user, id_subject];
+        const { rows } = await pool.query(text, values);
+
+        // Envía la respuesta al cliente
+        res.json(rows);
+    } catch (error) {
+        next({ error });
+    }
+}
+
 
 // ----------------------------------------
 // Create Category
 // ----------------------------------------
-async function createCategory(req, res) {
+async function createCategory(req, res, next) {
 
     try {
         const {
@@ -103,11 +181,14 @@ async function createCategory(req, res) {
         } = req.body;
 
         if (id_user && id_subject && name) {
+
             const text = 'INSERT INTO categories(id_user, id_subject, name) VALUES($1, $2, $3)';
             const values = [id_user, id_subject, name]
             const {
                 rows
             } = await pool.query(text, values);
+
+            // Envía la respuesta al cliente
             res.status(201).send(rows[0])
         } else {
             res.status(400).json({
@@ -120,6 +201,31 @@ async function createCategory(req, res) {
 }
 
 // ----------------------------------------
+// Update Category
+// ----------------------------------------
+async function updateCategory(req, res, next) {
+    try {
+        const id_category = req.params.categoryId;
+        const {
+            id_subject,
+            name
+        } = req.body;
+
+        // Comprobar si existe el registro antes??
+
+        const text2 = 'UPDATE categories SET id_subject = $1, name = $2, updated_at = NOW() WHERE id_category = $3';
+        const values2 = [id_subject, name, id_category];
+        const res2 = (await pool.query(text2, values2)).rows[0];
+
+        res.json(res2)
+
+    } catch (error) {
+        next({ error });
+    }
+}
+
+
+// ----------------------------------------
 // Delete Category
 // ----------------------------------------
 async function deleteCategory(req, res) {
@@ -128,6 +234,8 @@ async function deleteCategory(req, res) {
         const text = 'DELETE FROM categories WHERE id_category = $1';
         const values = [id_category];
         await pool.query(text, values);
+
+        // Envía la respuesta al cliente
         res.sendStatus(204);
     } catch (error) {
         next({ error });
@@ -139,6 +247,8 @@ async function deleteCategory(req, res) {
 // ----------------------------------------
 module.exports = {
     getCategories,
+    getCategoryOptions,
     createCategory,
+    updateCategory,
     deleteCategory
 }

@@ -36,7 +36,7 @@ const USERS_ROLES_WFILTER =
     ON u.id_user = r.id_user`;
 
 
-    
+
 // ----------------------------------------
 // Get Users
 // ----------------------------------------
@@ -118,7 +118,7 @@ async function getUserByUserId(req, res) {
 
 async function getUsersStudents(req, res) {
     try {
-       
+
         const document_no = req.query.document_no;
         const id_course = req.query.id_course;
 
@@ -271,6 +271,7 @@ async function updateUser(req, res) {
 
     try {
         const id_user = req.params.userId;
+        // Body Params
         const {
             name,
             last_name,
@@ -286,28 +287,31 @@ async function updateUser(req, res) {
 
         let user;
 
-
         if (req.user_payload.roles.includes(1)) { //SI SOY ADMIN: PUEDO MODIFICAR EL ACTIVE Y LOS ROLES
 
-            let q_update_us = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9 RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
-            let v_update_us = [name, last_name, middle_name, document_no, email, phone_no, username, active, id_user];
-
             let promises = [];
-            promises.push(client.query('BEGIN'));
+
+            // Inicia la transacción
+            client.query('BEGIN');
+
+            // Consulta para actualizar el usuario
+            const q_update_us = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9 RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
+            const v_update_us = [name, last_name, middle_name, document_no, email, phone_no, username, active, id_user];
+            // Agrega la query al array 'promises'
             promises.push(client.query(q_update_us, v_update_us));
 
+            // Si el array 'add_roles' existe y viene con algún rol para agregar
             if (add_roles && add_roles.length > 0) {
-                //INSERCIÓN DE ROL
+                //INSERCIÓN DE ROL 
                 const {
                     text,
                     values
                 } = insertRoles(add_roles, id_user);
-                console.log("texti1: ", text);
-                console.log("valuesi1: ", values)
+                // Agrega la query al array 'promises'
                 promises.push(client.query(text, values));
             }
             if (delete_roles && delete_roles.length > 0) {
-                delete_roles.push(32);
+                delete_roles.push(32); // Porque push(32)?
                 const {
                     text,
                     values
@@ -327,6 +331,8 @@ async function updateUser(req, res) {
                 }
             })
             //console.log("result_update: ", result_update[2].command);
+
+            // Finaliza la transacción
             await client.query('COMMIT')
 
             user = result_update[1].rows[0];
@@ -337,7 +343,6 @@ async function updateUser(req, res) {
             user = await pool.query(text, values);
         } else {
             return res.status(500).json({
-                success: false,
                 message: `you don't have permission to update user data`
             })
         }
@@ -512,12 +517,20 @@ function formatRolesArray(array_roles, id_user) {
 
     array_roles.map((role) => {
         values1.push(id_user);
-        values2.push(role)
+        values2.push(role);
+        // Mejor Opción:
+        //return [id_user, role];
     })
     //values1.push(28);
     //values2.push(4);
 
     return [values1, values2]
+}
+
+
+// Devuelve un array de tuplas [id_user, role]
+function formatRolesArray2(array_roles, id_user) {
+    return array_roles.map((role) => [id_user, role]);
 }
 
 // ----------------------------------------

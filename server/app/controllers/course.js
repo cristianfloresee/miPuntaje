@@ -5,7 +5,7 @@
 // ----------------------------------------
 const pool = require('../database');
 
-async function getCourses(req, res) {
+async function getCourses(req, res, next) {
     try {
         const search = req.query.search;
         const from = Number(req.query.from);
@@ -45,7 +45,7 @@ async function getCourses(req, res) {
 
         if (all_courses_by_teacher) {
             //console.log("PIKACHUUUUUUUUU");
-            const query = `SELECT s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1`;
+            const query = `SELECT s.id_subject, s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1`;
             const values = [all_courses_by_teacher]
             const { rows } = await pool.query(query, values);
             return res.send(rows)

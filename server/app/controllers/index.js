@@ -14,12 +14,16 @@ const _module = require('./module');
 const enrollment = require('./enrollment');
 const _lesson = require('./lesson');
 const _activity = require('./activity');
+const _activityParticipation = require('./activity_participation');
+const _image = require('./image');
+const _workspace = require('./workspace');
 
 // ----------------------------------------
 // Export Modules
 // ----------------------------------------
 module.exports = {
     _activity,
+    _activityParticipation,
     user,
     color,
     calendar,
@@ -31,5 +35,7 @@ module.exports = {
     question,
     _module,
     _lesson,
-    enrollment
+    enrollment,
+    _image,
+    _workspace
 };
