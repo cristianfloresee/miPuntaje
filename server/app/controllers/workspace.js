@@ -92,37 +92,12 @@ async function createCategory(req, res, next) {
 }
 
 // ----------------------------------------
-// Update Category
-// ----------------------------------------
-async function updateCategory(req, res, next) {
-    try {
-        const id_category = req.params.categoryId;
-        const {
-            id_subject,
-            name
-        } = req.body;
-
-        // Comprobar si existe el registro antes??
-
-        const text2 = 'UPDATE categories SET id_subject = $1, name = $2, updated_at = NOW() WHERE id_category = $3';
-        const values2 = [id_subject, name, id_category];
-        const res2 = (await pool.query(text2, values2)).rows[0];
-
-        res.json(res2)
-
-    } catch (error) {
-        next({ error });
-    }
-}
-
-
-// ----------------------------------------
 // Update Workspaces
 // ----------------------------------------
 async function updateWorkspaces(req, res, next) {
 
     const client = await pool.pool.connect();
-    
+
     try {
 
         const {
@@ -147,6 +122,27 @@ async function updateWorkspaces(req, res, next) {
             } = insertWorkspaces(add_workspaces, id_user);
             // Agrega la query al array 'promises'
             promises.push(client.query(text, values));
+
+
+            //LEFT(uuid_generate_v4()::text, 8)
+
+
+            // Crea la categoría por defecto
+            const text2 = `INSERT INTO categories(id_user, id_subject) SELECT * FROM UNNEST ($1::int[], $2::int[]) RETURNING id_category`;
+            let categories_created = (await client.query(text2, values)).rows;
+
+            categories_created = categories_created.map(item => item.id_category);
+            console.log("CATEGORY CREATED: ", categories_created);
+            // Crea la subcategoría por defecto
+            const text3 = `INSERT INTO subcategories(id_category) SELECT * FROM UNNEST ($1::int[])`;
+            await client.query(text3, [categories_created]);
+            //console.log("CATEGORY");
+
+            //const text2 = `INSERT INTO categories(id_category, id_user, id_subject, name) VALUES(CONCAT('_', LEFT(uuid_generate_v4()::text, 7)) ,$1, $2, $3)`;
+            //const text2 = `INSERT INTO categories(id_user, id_subject, name) VALUES($1, $2, 'DEFAULT')`; // Podría poner nombre por defecto en la db
+            //const values2 = [id_user, id_subject];
+            //promises.push(client.query(text2, values2));
+
         }
 
         if (delete_workspaces && delete_workspaces.length > 0) {
@@ -190,11 +186,15 @@ async function deleteCategory(req, res) {
 }
 
 function insertWorkspaces(array_workspaces, id_user) {
-    const text = `INSERT INTO user_subject (id_user, id_subject) SELECT * FROM UNNEST ($1::int[], $2::int2[])`;
+    const text = `INSERT INTO user_subject (id_user, id_subject) SELECT * FROM UNNEST ($1::int[], $2::int[])`;
     const values = formatWorkspaceArray(array_workspaces, id_user);
+    // Crea la categoría por defecto
+    const text2 = `INSERT INTO categories(id_user, id_subject) SELECT * FROM UNNEST ($1::int[], $2::int[])`;
+    // Crea la subcategoría por defecto
     return {
         text,
-        values
+        values,
+        text2,
     }
 }
 
@@ -215,20 +215,18 @@ function formatWorkspaceArray(array_workspaces, id_user) {
         values1.push(id_user);
         values2.push(workspace);
     });
-    //values1.push(28);
-    //values2.push(4);
 
     return [values1, values2]
 }
 
+function formatForSubcategory(id_category) {
+    let values1 = []; //[id_user, id_user, id_user]
 
-function insertWorkspace(array_workspaces, id_user) {
-    const text = '';
-    const values = '';
-    return {
-        text,
-        values
-    }
+    array_workspaces.map((workspace) => {
+        values1.push(id_category);
+    });
+
+    return [values1]
 }
 
 // ----------------------------------------

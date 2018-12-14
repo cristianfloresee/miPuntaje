@@ -228,7 +228,7 @@ async function updateCategory(req, res, next) {
 // ----------------------------------------
 // Delete Category
 // ----------------------------------------
-async function deleteCategory(req, res) {
+async function deleteCategory(req, res, next) {
     try {
         const id_category = req.params.categoryId;
         const text = 'DELETE FROM categories WHERE id_category = $1';

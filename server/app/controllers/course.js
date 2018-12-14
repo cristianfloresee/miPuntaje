@@ -98,6 +98,7 @@ async function getCourses(req, res, next) {
 async function createCourse(req, res) {
 
     try {
+        // Body Params 
         const {
             id_calendar,
             id_user,
@@ -109,7 +110,12 @@ async function createCourse(req, res) {
 
         if (id_calendar && id_user && id_subject && name && course_goal && student_goal) {
 
-            const text = `WITH user_subject AS (INSERT INTO user_subject(id_user,id_subject) VALUES($1,$2) ON CONFLICT ON CONSTRAINT pk_user_subject DO NOTHING) INSERT INTO courses(id_calendar, id_user, id_subject, name, course_goal, student_goal, code) VALUES($3, $4, $5, $6, $7, $8, LEFT(uuid_generate_v4()::text, 8))`
+            // Inserta un workspace (si ya existe no hace nada)
+            const text = `WITH user_subject AS (
+                INSERT INTO user_subject(id_user,id_subject) VALUES($1,$2) ON CONFLICT ON CONSTRAINT pk_user_subject DO NOTHING
+                ) 
+                INSERT INTO courses(id_calendar, id_user, id_subject, name, course_goal, student_goal, code) 
+                VALUES($3, $4, $5, $6, $7, $8, LEFT(uuid_generate_v4()::text, 8))`
             const values = [id_user, id_subject, id_calendar, id_user, id_subject, name, course_goal, student_goal]
             const {
                 rows

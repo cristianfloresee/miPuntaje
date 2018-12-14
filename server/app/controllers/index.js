@@ -13,6 +13,7 @@ const question = require('./question');
 const _module = require('./module');
 const enrollment = require('./enrollment');
 const _lesson = require('./lesson');
+const _lessonQuestion = require('./lesson_question');
 const _activity = require('./activity');
 const _activityParticipation = require('./activity_participation');
 const _image = require('./image');
@@ -35,6 +36,7 @@ module.exports = {
     question,
     _module,
     _lesson,
+    _lessonQuestion,
     enrollment,
     _image,
     _workspace

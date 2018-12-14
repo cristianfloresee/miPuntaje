@@ -131,7 +131,7 @@ async function updateSubcategory(req, res, next) {
 // ----------------------------------------
 // Delete Subcategory
 // ----------------------------------------
-async function deleteSubcategory(req, res) {
+async function deleteSubcategory(req, res, next) {
     try {
         const id_subcategory = req.params.subcategoryId;
 

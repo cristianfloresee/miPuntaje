@@ -56,6 +56,7 @@ CREATE TABLE user_subject
 (
 	id_user INTEGER NOT NULL,
 	id_subject INTEGER NOT NULL,
+	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_user_subject PRIMARY KEY (id_user, id_subject),
 	CONSTRAINT fk_user_subject__user FOREIGN KEY (id_user) REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE RESTRICT,
 	CONSTRAINT fk_user_subject__subject FOREIGN KEY (id_subject) REFERENCES subjects (id_subject) ON UPDATE CASCADE ON DELETE RESTRICT
@@ -155,10 +156,10 @@ CREATE TABLE activities
 DROP TABLE IF EXISTS categories;
 CREATE TABLE categories
 (
-	id_category SERIAL,
+	id_category UUID NOT NULL DEFAULT uuid_generate_v4(),
 	id_user	INTEGER NOT NULL,
 	id_subject	INTEGER NOT NULL,
-	name VARCHAR(30) NOT NULL,
+	name VARCHAR(30) NOT NULL DEFAULT 'General',
 	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_category PRIMARY KEY (id_category),
@@ -171,9 +172,9 @@ CREATE TABLE categories
 DROP TABLE IF EXISTS subcategories;
 CREATE TABLE subcategories
 (
-	id_subcategory SERIAL,
+	id_subcategory UUID NOT NULL DEFAULT uuid_generate_v4(),
 	id_category INTEGER NOT NULL,
-	name VARCHAR(30) NOT NULL,
+	name VARCHAR(30) NOT NULL DEFAULT 'General',
 	create_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	update_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_subcategory PRIMARY KEY (id_subcategory),
