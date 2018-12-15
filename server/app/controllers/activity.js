@@ -47,12 +47,28 @@ async function getActivities(req, res, next) {
         const from = (page - 1) * page_size;
 
         // Obtiene las Actividades por ID Curso (Parámetros de Filtro Opcionales)
-        const text = 'SELECT a.id_activity, a.name, a.mode, a.status, a.created_at, a.updated_at, c.id_class, c.description AS lesson, m.id_module, m.name AS module, CASE WHEN EXISTS (SELECT id_user FROM activity_student AS au WHERE id_activity = a.id_activity AND status = TRUE) THEN TRUE ELSE FALSE END AS winners FROM activities AS a INNER JOIN classes AS c ON c.id_class = a.id_class INNER JOIN modules AS m ON m.id_module = c.id_module WHERE id_course = $1 AND ($2::int is null or a.mode = $2) AND ($3::bool is null or a.status = $3) LIMIT $4 OFFSET $5';
+        // En una parte utiliza status = 3 para mostrar si en una actividad hubieron ganadores
+        const text = `SELECT a.id_activity, a.name, a.mode, a.status, a.created_at, a.updated_at, c.id_class, c.description AS lesson, m.id_module, m.name AS module, 
+        CASE WHEN EXISTS (
+            SELECT id_user 
+            FROM activity_student AS au 
+            WHERE id_activity = a.id_activity 
+            AND status = 3
+        ) THEN TRUE ELSE FALSE END AS winners 
+        FROM activities AS a 
+        INNER JOIN classes AS c 
+        ON c.id_class = a.id_class 
+        INNER JOIN modules AS m 
+        ON m.id_module = c.id_module 
+        WHERE id_course = $1 
+        AND ($2::int is null or a.mode = $2) 
+        AND ($3::int is null or a.status = $3) 
+        LIMIT $4 OFFSET $5`;
         const values = [id_course, mode, status, page_size, from];
         const { rows } = await pool.query(text, values);
 
         // Obtiene la cantidad total de Actividades por ID Curso (Parámetros de Filtro Opcionales)
-        const text2 = 'SELECT count(*) FROM activities WHERE id_class IN (SELECT id_class FROM classes WHERE id_module IN (SELECT id_module FROM modules WHERE id_course = $1)) AND ($2::int is null or mode = $2) AND ($3::bool is null or status = $3)';
+        const text2 = 'SELECT count(*) FROM activities WHERE id_class IN (SELECT id_class FROM classes WHERE id_module IN (SELECT id_module FROM modules WHERE id_course = $1)) AND ($2::int is null or mode = $2) AND ($3::int is null or status = $3)';
         const values2 = [id_course, mode, status];
         const total_items = (await pool.query(text2, values2)).rows[0].count;
 
@@ -129,7 +145,11 @@ async function getStudentsByActivityID(req, res, next) {
     try {
         const id_activity = req.query.id_activity;
         console.log("get students by activity: ", id_activity);
-        const text = 'SELECT u.id_user, u.name, u.last_name, u.middle_name, au.status FROM activity_student AS au INNER JOIN users AS u ON au.id_user = u.id_user WHERE id_activity = $1';
+        const text = `SELECT u.id_user, u.name, u.last_name, u.middle_name, au.status 
+        FROM activity_student AS au 
+        INNER JOIN users AS u 
+        ON au.id_user = u.id_user 
+        WHERE id_activity = $1`;
         const values = [id_activity];
         const { rows } = await pool.query(text, values);
 
@@ -170,7 +190,7 @@ function updateParticipation(id_activity, array_participation) {
 	UPDATE activity_student AS au 
 	SET status = s.status 
 	FROM (
-		SELECT (a->>'id_activity')::int AS id_activity, (a->>'id_user')::int AS id_user, (a->>'status')::bool AS status
+		SELECT (a->>'id_activity')::int AS id_activity, (a->>'id_user')::int AS id_user, (a->>'status')::int AS status
 		FROM (
         	SELECT jsonb_array_elements(a) AS a
         	FROM (values (($1)::jsonb)) s(a)

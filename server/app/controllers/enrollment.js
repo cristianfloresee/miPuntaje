@@ -59,7 +59,7 @@ async function getEnrollmentsByCourseId(req, res) {
     try {
         const id_course = req.params.courseId;
 
-        const text1 = ' SELECT cs.enrollment_date, cs.disabled, u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username FROM course_student AS cs INNER JOIN users AS u ON cs.id_user = u.id_user WHERE id_course = $1';
+        const text1 = 'SELECT cs.enrollment_date, cs.active, u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username FROM course_student AS cs INNER JOIN users AS u ON cs.id_user = u.id_user WHERE id_course = $1';
         const values1 = [id_course];
         const { rows } = (await pool.query(text1, values1));
 
@@ -79,10 +79,10 @@ async function updateEnrollment(req, res) {
     try {
         const id_course = req.params.courseId;
         const id_user = req.params.userId;
-        const disabled = req.body.disabled;
+        const active = req.body.active;
 
-        const text = 'UPDATE course_student SET disabled = $1 WHERE id_course = $2 AND id_user = $3';
-        const values = [disabled, id_course, id_user];
+        const text = 'UPDATE course_student SET active = $1 WHERE id_course = $2 AND id_user = $3';
+        const values = [active, id_course, id_user];
 
         await pool.query(text, values);
         res.status(204).send();

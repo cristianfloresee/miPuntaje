@@ -27,7 +27,7 @@ async function getLessons(req, res, next) {
         ON m.id_module = c.id_module 
         WHERE ($1::int IS NULL OR m.id_course = $1) 
         AND ($2::int IS NULL OR m.id_module = $2) 
-        AND ($3::bool IS NULL OR c.status = $3) 
+        AND ($3::int IS NULL OR c.status = $3) 
         LIMIT $4 
         OFFSET $5`;
         const values = [id_course, id_module, status, page_size, from];
@@ -43,7 +43,7 @@ async function getLessons(req, res, next) {
             FROM modules 
             WHERE id_course = $2)
             ) 
-        AND ($3::bool IS NULL OR status = $3)`;
+        AND ($3::int IS NULL OR status = $3)`;
         const values2 = [id_module, id_course, status];
         const total_items = (await pool.query(text2, values2)).rows[0].count;
 

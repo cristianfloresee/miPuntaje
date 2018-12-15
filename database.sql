@@ -229,7 +229,7 @@ CREATE TABLE course_user
 (
 	id_user INTEGER NOT NULL,
 	id_course INTEGER NOT NULL,
-	disabled BOOLEAN NOT NULL DEFAULT FALSE,
+	active BOOLEAN NOT NULL DEFAULT FALSE,
 	enrollment_time TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT pk_course_user PRIMARY KEY (id_course, id_user),
 	CONSTRAINT fk_course_user__user FOREIGN KEY (id_user) REFERENCES users(id_user),
