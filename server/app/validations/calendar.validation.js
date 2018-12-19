@@ -11,14 +11,14 @@ const {
 module.exports = {
     calendar: [
         check('year')
-        .exists().withMessage('Year is a required field.')
-        .isInt().withMessage('Year must be an integer.')
-        .isLength({min: 4, max:4}).withMessage('Year must be 4 numbers.'),
+            .exists().withMessage('Year is a required field.')
+            .isInt().withMessage('Year must be an integer.')
+            .isLength({ min: 4, max: 4 }).withMessage('Year must be 4 numbers.'),
 
         check('semester')
-        .exists().withMessage('Semester is a required field.')
-        .isInt().withMessage('Semester must be an integer.')
-        .isLength({min: 4, max:4}).withMessage('Semester must be 4 numbers.'),
+            .exists().withMessage('Semester is a required field.')
+            .isInt().withMessage('Semester must be an integer.')
+            .isLength({ min: 1, max: 10 }).withMessage('Semester must be 4 numbers.'),
     ],
     errorFormatter: ({
         location,

@@ -4,13 +4,9 @@
 // Load Modules
 // ----------------------------------------
 const pool = require('../database');
-const _f_exts = require('../config/file_exts');
 const _file = require('../services/file');
+const socket = require('../../server');
 
-// ----------------------------------------
-// Init Upload Service
-// ----------------------------------------
-//const upload = _file.uploadFile('images/questions', _f_exts.IMAGE_EXTS, 5, 'image');
 
 // ----------------------------------------
 // Get Questions
@@ -19,7 +15,7 @@ async function getLessonQuestions(req, res, next) {
 
     try {
 
-     
+
         // Query Params
         const id_lesson = req.query.id_lesson; // Obligatorio
         const id_category = req.query.id_category || null;
@@ -34,10 +30,10 @@ async function getLessonQuestions(req, res, next) {
         console.log(`id_lesson: ${id_lesson}, id_category: ${id_category}, id_subcategory: ${id_subcategory}, difficulty: ${difficulty}, page_size: ${page_size}, page: ${page}`);
 
         // Obtiene las preguntas por id de usuario (profesor) y id de asignatura 
-        const text = `SELECT c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, qc.status
+        const text = `SELECT c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, cq.status, cq.added_at, cq.updated_at
         FROM questions AS q
-        INNER JOIN question_class AS qc
-        ON q.id_question = qc.id_question
+        INNER JOIN class_question AS cq
+        ON q.id_question = cq.id_question
         INNER JOIN subcategories AS s 
         ON q.id_subcategory = s.id_subcategory 
         INNER JOIN categories AS c 
@@ -58,8 +54,8 @@ async function getLessonQuestions(req, res, next) {
         const text2 = `
         SELECT count(*)
         FROM questions AS q
-        INNER JOIN question_class AS qc
-        ON q.id_question = qc.id_question
+        INNER JOIN class_question AS cq
+        ON q.id_question = cq.id_question
         INNER JOIN subcategories AS s 
         ON q.id_subcategory = s.id_subcategory 
         INNER JOIN categories AS c 
@@ -112,9 +108,9 @@ async function getAllQuestionsForLesson(req, res, next) {
         const text = `SELECT c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, q.updated_at, 
         CASE WHEN EXISTS (
                 SELECT id_question 
-                FROM question_class AS qc
-                WHERE qc.id_question = q.id_question
-                AND qc.id_class = $6
+                FROM class_question AS cq
+                WHERE cq.id_question = q.id_question
+                AND cq.id_class = $6
         ) THEN TRUE ELSE FALSE END AS added 
         FROM questions AS q 
         INNER JOIN subcategories AS s 
@@ -171,65 +167,12 @@ async function getAllQuestionsForLesson(req, res, next) {
     }
 }
 
-
-/*
-async function getQuestionOptions(req, res, next) {
-    try {
-        const id_category = req.query.id_category; // Obligatorio por ahora 
-
-        // Obtiene las preguntas
-        const text = 'SELECT id_subcategory, name FROM subcategories WHERE WHERE id_category = $1 ORDER BY name';
-        const values = [id_category];
-        const { rows } = await pool.query(text, values);
-
-        // Envía la Respuesta
-        res.json(rows);
-    } catch {
-        next({ error });
-    }
-
-}
-*/
-
-// ----------------------------------------
-// Create Question
-// ----------------------------------------
-async function createQuestion(req, res) {
-
-    upload(req, res, async (error) => {
-
-        if (error) return res.sendStatus(500);
-        const file_path = req.file !== undefined ? req.file.path : undefined;
-
-        try {
-            // Body Params
-            const {
-                id_subcategory,
-                description,
-                difficulty
-            } = req.body;
-
-            const text = 'INSERT INTO questions(id_subcategory, description, difficulty, image) VALUES($1, $2, $3, $4) RETURNING *';
-            const values = [id_subcategory, description, difficulty, file_path];
-            const {
-                rows
-            } = await pool.query(text, values);
-
-            // Envía la respuesta al cliente
-            res.status(201).send(rows[0]);
-        } catch (error) {
-            if (file_path) _file.deleteFile(file_path);
-            next({ error });
-        }
-    });
-
-}
-
-async function updateLessonQuestions(req, res, next){
+// Crea o elimina múltiples preguntas en una clase
+async function updateLessonQuestions(req, res, next) {
     const client = await pool.pool.connect();
 
     try {
-
+        // Body Params
         const {
             id_lesson,
             add_questions,
@@ -277,8 +220,34 @@ async function updateLessonQuestions(req, res, next){
     }
 }
 
-function deleteLessonQuestions(array_questions, id_lesson){
-    const text = `DELETE FROM question_class WHERE (id_question, id_class) IN (SELECT * FROM UNNEST ($1::int[], $2::int[]))`;
+
+// Actualiza el estado de una pregunta
+async function updateLessonQuestion(req, res, next) {
+    const id_class = req.params.classId;
+    const id_question = req.params.questionId;
+
+    try {
+        // Body Params
+        const {
+            status
+        } = req.body;
+
+        const text2 = 'UPDATE class_question SET status = $1 WHERE id_class = $2 AND id_question = $3 RETURNING *';
+        const values2 = [status, id_class, id_question];
+        const { rows } = await pool.query(text2, values2);
+        // Activar socket...
+        let io = socket.getSocket();
+        io.emit('init_question', rows[0]);
+        res.json(rows[0])
+
+    } catch (error) {
+        next({ error });
+    } 
+}
+
+
+function deleteLessonQuestions(array_questions, id_lesson) {
+    const text = `DELETE FROM class_question WHERE (id_question, id_class) IN (SELECT * FROM UNNEST ($1::int[], $2::int[]))`;
     const values = formatWorkspaceArray(array_questions, id_lesson);
     return {
         text,
@@ -287,7 +256,7 @@ function deleteLessonQuestions(array_questions, id_lesson){
 }
 
 function insertLessonQuestions(array_questions, id_lesson) {
-    const text = `INSERT INTO question_class (id_question, id_class) SELECT * FROM UNNEST ($1::int[], $2::int[])`;
+    const text = `INSERT INTO class_question (id_question, id_class) SELECT * FROM UNNEST ($1::int[], $2::int[])`;
     const values = formatWorkspaceArray(array_questions, id_lesson);
     return {
         text,
@@ -307,6 +276,26 @@ function formatWorkspaceArray(array_questions, id_lesson) {
     return [values1, values2]
 }
 
+// ----------------------------------------
+// Delete Question
+// ----------------------------------------
+async function deleteClassQuestion(req, res, next) {
+    try {
+        const id_class = req.params.classId;
+        const id_question = req.params.questionId;
+
+        const text = 'DELETE FROM class_question WHERE id_class = $1 AND id_question = $2';
+        const values = [id_class, id_question]
+        await pool.query(text, values);
+
+        res.sendStatus(204);
+
+    } catch (error) {
+        next({ error });
+    }
+}
+
+
 
 
 // ----------------------------------------
@@ -315,6 +304,7 @@ function formatWorkspaceArray(array_questions, id_lesson) {
 module.exports = {
     getLessonQuestions,
     getAllQuestionsForLesson,
-    updateLessonQuestions
-
+    updateLessonQuestions,
+    updateLessonQuestion,
+    deleteClassQuestion
 }

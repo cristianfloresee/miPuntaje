@@ -16,8 +16,9 @@ api.get('/all', _lessonQuestionController.getAllQuestionsForLesson);
 //api.get('/select_options', _questionController.getQuestionOptions); //Opciones para el Selector
 //api.get('/:userId', colorController.getColorsByUserId);
 api.post('/', _lessonQuestionController.updateLessonQuestions);
+api.post('/:classId/:questionId', _lessonQuestionController.updateLessonQuestion);
 //api.put('/:questionId', _questionController.updateQuestion);
-//api.delete('/:questionId', _questionController.deleteQuestion);
+api.delete('/:classId/:questionId', _lessonQuestionController.deleteClassQuestion);
 //api.get('/count', categoryController.countCategory);
 
 // ----------------------------------------

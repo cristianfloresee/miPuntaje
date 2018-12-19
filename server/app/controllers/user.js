@@ -9,28 +9,28 @@ const pool = require('../database');
 
 //SEGMENTOS DE CONSULTA*************************************************************************
 const ROLES =
-    `SELECT id_user, array_agg(id_role ORDER BY id_role) AS roles
-    FROM user_role
+    `SELECT id_user, array_agg(role ORDER BY role) AS roles
+    FROM roles
     GROUP BY id_user`;
 
 const ROLES_FILTER =
-    `SELECT id_user, array_agg(id_role ORDER BY id_role) AS roles 
-    FROM user_role 
+    `SELECT id_user, array_agg(role ORDER BY role) AS roles 
+    FROM roles 
     GROUP BY id_user 
-    HAVING $3 = ANY(array_agg(id_role))
+    HAVING $3 = ANY(array_agg(role))
     ORDER BY id_user`;
 
 const PAGINATION =
     `ORDER BY id_user LIMIT $1 OFFSET $2`;
 
 const USERS_ROLES =
-    `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users 
+    `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document, u.email, u.phone, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users 
     FROM users AS u 
     INNER JOIN (${ROLES}) AS r 
     ON u.id_user = r.id_user`;
 
 const USERS_ROLES_WFILTER =
-    `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.email, u.phone_no, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users 
+    `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document, u.email, u.phone, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users 
     FROM users AS u 
     INNER JOIN (${ROLES_FILTER}) AS r 
     ON u.id_user = r.id_user`;
@@ -109,7 +109,7 @@ async function getUserByUserId(req, res) {
         var id_user = req.params.userId;
         const {
             rows
-        } = await pool.query('SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, active, profile_image, created_at, updated_at FROM users WHERE id_user = $1', [id_user]);
+        } = await pool.query('SELECT id_user, name, last_name, middle_name, document, email, phone, username, active, profile_image, created_at, updated_at FROM users WHERE id_user = $1', [id_user]);
         res.json(rows)
     } catch (error) {
         next({ error });
@@ -119,12 +119,12 @@ async function getUserByUserId(req, res) {
 async function getUsersStudents(req, res) {
     try {
 
-        const document_no = req.query.document_no;
+        const document = req.query.document;
         const id_course = req.query.id_course;
 
-        //const text = 'SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document_no FROM user_role AS r INNER JOIN users AS u ON r.id_user = u.id_user WHERE id_role = 3 AND document_no = $1';
-        const text = `SELECT r.id_user, u.name, u.last_name, u.middle_name, u.document_no, u.username, u.email, CASE WHEN EXISTS (SELECT cu.id_user FROM course_student AS cu WHERE cu.id_user = u.id_user AND id_course = $1) THEN TRUE ELSE FALSE END AS enrolled FROM user_role AS r INNER JOIN users AS u ON r.id_user = u.id_user WHERE id_role = 3 AND document_no = $2`;
-        const values = [id_course, document_no];
+        //const text = 'SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document FROM roles AS r INNER JOIN users AS u ON r.id_user = u.id_user WHERE role = 3 AND document = $1';
+        const text = `SELECT r.id_user, u.name, u.last_name, u.middle_name, u.document, u.username, u.email, CASE WHEN EXISTS (SELECT cu.id_user FROM course_user AS cu WHERE cu.id_user = u.id_user AND id_course = $1) THEN TRUE ELSE FALSE END AS enrolled FROM roles AS r INNER JOIN users AS u ON r.id_user = u.id_user WHERE role = 3 AND document = $2`;
+        const values = [id_course, document];
         const {
             rows
         } = await pool.query(text, values);
@@ -153,9 +153,9 @@ async function createUser(req, res) {
             name,
             last_name,
             middle_name,
-            document_no,
+            document,
             email,
-            phone_no,
+            phone,
             username,
             profile_image,
             password,
@@ -164,7 +164,7 @@ async function createUser(req, res) {
 
 
         //console.log("ROLES EN LA DB QLO: ", roles);
-        if (name && last_name && middle_name && document_no && email && phone_no && username && password && roles) {
+        if (name && last_name && middle_name && document && email && phone && username && password && roles) {
             //COMPRUEBO QUE EL RUT,USERNAME E EMAIL NO EXISTAN  EN LA BASE DE DATOS user.rut.toLowerCase()
 
             if (roles.length == 0) {
@@ -174,31 +174,31 @@ async function createUser(req, res) {
             }
 
             const result_search = await Promise.all([
-                pool.query('SELECT id_user FROM users WHERE document_no = $1', [document_no]),
+                pool.query('SELECT id_user FROM users WHERE document = $1', [document]),
                 pool.query('SELECT id_user FROM users WHERE username = $1', [username]),
                 pool.query('SELECT id_user FROM users WHERE email = $1', [email]),
             ]);
 
-            const rows_document_no = result_search[0].rows;
+            const rows_document = result_search[0].rows;
             const rows_username = result_search[1].rows;
             const rows_email = result_search[2].rows;
-            let combination = `${rows_document_no.length}${rows_username.length}${rows_email.length}`;
+            let combination = `${rows_document.length}${rows_username.length}${rows_email.length}`;
 
             switch (combination) {
                 case '111':
                     return res.status(500).json({
                         status: '111',
-                        message: `this document_no, username and email has been taken`
+                        message: `this document, username and email has been taken`
                     })
                 case '110':
                     return res.status(500).json({
                         status: '110',
-                        message: `this document_no and username has been taken`
+                        message: `this document and username has been taken`
                     })
                 case '101':
                     return res.status(500).json({
                         status: '101',
-                        message: `this document_no and email has been taken`
+                        message: `this document and email has been taken`
                     })
                 case '011':
                     return res.status(500).json({
@@ -208,7 +208,7 @@ async function createUser(req, res) {
                 case '100':
                     return res.status(500).json({
                         status: '100',
-                        message: `this document_no has been taken`
+                        message: `this document has been taken`
                     })
                 case '010':
                     return res.status(500).json({
@@ -228,8 +228,8 @@ async function createUser(req, res) {
                     client.query('BEGIN');
 
                     //INSERCIÓN DE USUARIO
-                    const text1 = 'INSERT INTO users(name, last_name, middle_name, document_no, email, phone_no, username, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
-                    const values1 = [name, last_name, middle_name, document_no, email, phone_no, username, bcrypt.hashSync(password, salt)];
+                    const text1 = 'INSERT INTO users(name, last_name, middle_name, document, email, phone, username, password) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_user, name, last_name, middle_name, document, email, phone, username, password, active, profile_image, created_at, updated_at';
+                    const values1 = [name, last_name, middle_name, document, email, phone, username, bcrypt.hashSync(password, salt)];
                     const user = (await client.query(text1, values1)).rows[0];
 
                     //INSERCIÓN DE ROL
@@ -242,7 +242,7 @@ async function createUser(req, res) {
                     //FINALIZA LA TRANSACCIÓN
                     await client.query('COMMIT')
 
-                    //const roles = await pool.query('INSERT INTO user_role(id_user, id_role) VALUES($1, $2)', [rows[0].id_user, '3']);
+                    //const roles = await pool.query('INSERT INTO roles(id_user, role) VALUES($1, $2)', [rows[0].id_user, '3']);
                     //GENERO EL TOKEN CON DATOS DE USUARIO Y ROLES
                     res.json({
                         message: 'successfully created user',
@@ -265,7 +265,7 @@ async function createUser(req, res) {
 
 
 
-async function updateUser(req, res) {
+async function updateUser(req, res, next) {
 
     const client = await pool.pool.connect();
 
@@ -276,9 +276,9 @@ async function updateUser(req, res) {
             name,
             last_name,
             middle_name,
-            document_no,
+            document,
             email,
-            phone_no,
+            phone,
             username,
             active,
             add_roles,
@@ -295,8 +295,8 @@ async function updateUser(req, res) {
             client.query('BEGIN');
 
             // Consulta para actualizar el usuario
-            const q_update_us = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7, active = $8 WHERE id_user = $9 RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
-            const v_update_us = [name, last_name, middle_name, document_no, email, phone_no, username, active, id_user];
+            const q_update_us = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document = $4, email = $5, phone = $6, username = $7, active = $8 WHERE id_user = $9 RETURNING id_user, name, last_name, middle_name, document, email, phone, username, password, active, profile_image, created_at, updated_at';
+            const v_update_us = [name, last_name, middle_name, document, email, phone, username, active, id_user];
             // Agrega la query al array 'promises'
             promises.push(client.query(q_update_us, v_update_us));
 
@@ -321,8 +321,11 @@ async function updateUser(req, res) {
                 promises.push(client.query(text, values));
             }
 
+            // Resuelvo el array de consultas
             const result_update = await Promise.all(promises);
+            console.log("result update: ", result_update[0]);
 
+            //
             result_update.map(result => {
                 if (result.command == 'DELETE') {
                     console.log(result);
@@ -330,15 +333,16 @@ async function updateUser(req, res) {
                     //if(result.rowCount != delete_roles.length)
                 }
             })
-            //console.log("result_update: ", result_update[2].command);
+     
 
             // Finaliza la transacción
             await client.query('COMMIT')
 
-            user = result_update[1].rows[0];
+            // Obtiene los datos del usuario actualizado (result_update[0] para obtener los datos de la query de actualización)
+            user = result_update[0].rows[0]; 
         } else if (id_user != req.user_payload.id_user) { //SI SOY DUEÑO DEL ID
-            let text = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document_no = $4, email = $5, phone_no = $6, username = $7 WHERE id_user = $8 RETURNING id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at';
-            let values = [name, last_name, middle_name, document_no, email, phone_no, username, id_user];
+            let text = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document = $4, email = $5, phone = $6, username = $7 WHERE id_user = $8 RETURNING id_user, name, last_name, middle_name, document, email, phone, username, password, active, profile_image, created_at, updated_at';
+            let values = [name, last_name, middle_name, document, email, phone, username, id_user];
 
             user = await pool.query(text, values);
         } else {
@@ -348,7 +352,7 @@ async function updateUser(req, res) {
         }
 
         //RECUPERO ROLES, QUITO LA CONTRASEÑA Y ENVIO RESPONSE...
-        const _roles = (await pool.query('SELECT array_agg(id_role ORDER BY id_role) AS roles FROM user_role WHERE id_user = $1', [id_user])).rows;
+        const _roles = (await pool.query('SELECT array_agg(role ORDER BY role) AS roles FROM roles WHERE id_user = $1', [id_user])).rows;
         user.roles = _roles[0].roles;
         delete user.password;
 
@@ -366,7 +370,7 @@ async function updateUser(req, res) {
 }
 
 //NO ME DEJA BORRAR PORQUE DEPENDE DE TABLA ROLE...
-async function deleteUser(req, res) {
+async function deleteUser(req, res, next) {
     try {
         const id_user = req.params.userId;
         const {
@@ -445,7 +449,7 @@ function searchAnything(search_value, index) {
     }
     //SI ES "SOLO" NUMERO ENTONCES ES RUT
     else if (/^[0-9]+$/.test(search_value)) {
-        mquery = `document_no LIKE $${index}`;
+        mquery = `document LIKE $${index}`;
         mvalues = [`${search_value}%`];
     }
     //SI TIENE 2 O 3 PALABRAS ENTONCES ES NOMBRE
@@ -462,7 +466,7 @@ function searchAnything(search_value, index) {
     }
     //SI TIENE LETRAS Y NÚMEROS ES USUARIO O RUT (WARN: el rut lo puede buscar con punto y guion)
     else if (/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(search_value)) {
-        mquery = `(username LIKE $${index} OR document_no LIKE $${index})`;
+        mquery = `(username LIKE $${index} OR document LIKE $${index})`;
         mvalues = [`%${search_value}%`];
     }
     //POR DEFECTO BUSCA SOLO EN NOMBRE
@@ -494,7 +498,7 @@ async function countUser(req, res) {
 
 
 function insertRoles(array_roles, id_user) {
-    const text = `INSERT INTO user_role (id_user, id_role) SELECT * FROM UNNEST ($1::int[], $2::int2[])`;
+    const text = `INSERT INTO roles (id_user, role) SELECT * FROM UNNEST ($1::int[], $2::int2[])`;
     const values = formatRolesArray(array_roles, id_user);
     return {
         text,
@@ -503,7 +507,7 @@ function insertRoles(array_roles, id_user) {
 }
 
 function deleteRoles(array_roles, id_user) {
-    const text = `DELETE FROM user_role WHERE (id_user, id_role) IN (SELECT * FROM UNNEST ($1::int[], $2::int2[]))`;
+    const text = `DELETE FROM roles WHERE (id_user, role) IN (SELECT * FROM UNNEST ($1::int[], $2::int2[]))`;
     const values = formatRolesArray(array_roles, id_user);
     return {
         text,

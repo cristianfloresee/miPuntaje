@@ -8,9 +8,9 @@ CREATE TABLE users
 	name VARCHAR(30) NOT NULL,
 	last_name VARCHAR(30) NOT NULL,
 	middle_name VARCHAR(30) NOT NULL,
-	document_no VARCHAR(30) NOT NULL,
+	document VARCHAR(30) NOT NULL,
 	email VARCHAR(30) NOT NULL UNIQUE,
-	phone_no VARCHAR(30) NOT NULL,
+	phone VARCHAR(30) NOT NULL,
 	username VARCHAR(30) NOT NULL UNIQUE,
 	password VARCHAR(255) NOT NULL,
 	active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -266,38 +266,38 @@ CREATE TABLE user_subject_color
 );
 
 -- ----------------------------
--- Table structure for question_class
+-- Table structure for class_question
 -- ----------------------------
-DROP TABLE IF EXISTS question_class;
-CREATE TABLE question_class
+DROP TABLE IF EXISTS class_question;
+CREATE TABLE class_question
 (
 	id_question INTEGER NOT NULL,
 	id_class INTEGER NOT NULL,
 	status BOOLEAN NOT NULL DEFAULT FALSE,
-	CONSTRAINT pk_question_class PRIMARY KEY (id_question, id_class),
-	CONSTRAINT fk_question_class__question FOREIGN KEY (id_question) REFERENCES questions(id_question),
-	CONSTRAINT fk_question_class__class FOREIGN KEY (id_class) REFERENCES classes(id_class)
+	CONSTRAINT pk_class_question PRIMARY KEY (id_question, id_class),
+	CONSTRAINT fk_class_question__question FOREIGN KEY (id_question) REFERENCES questions(id_question),
+	CONSTRAINT fk_class_question__class FOREIGN KEY (id_class) REFERENCES classes(id_class)
 );
 
 -- ----------------------------
--- Table structure for user_question_class
+-- Table structure for user_class_question
 -- ----------------------------
-DROP TABLE IF EXISTS user_question_class;
-CREATE TABLE user_question_class
+DROP TABLE IF EXISTS user_class_question;
+CREATE TABLE user_class_question
 (
 	id_user INTEGER NOT NULL,
 	id_question INTEGER NOT NULL,
 	id_class INTEGER NOT NULL,
 	status BOOLEAN NOT NULL DEFAULT FALSE,
-	CONSTRAINT pk_user_question_class PRIMARY KEY (id_user, id_question, id_class),
-	CONSTRAINT fk_user_question_class__user FOREIGN KEY (id_user) REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE RESTRICT,
-	CONSTRAINT fk_user_question_class__question_class FOREIGN KEY (id_question, id_class) REFERENCES question_class(id_question, id_class) ON UPDATE CASCADE ON DELETE RESTRICT
+	CONSTRAINT pk_user_class_question PRIMARY KEY (id_user, id_question, id_class),
+	CONSTRAINT fk_user_class_question__user FOREIGN KEY (id_user) REFERENCES users(id_user) ON UPDATE CASCADE ON DELETE RESTRICT,
+	CONSTRAINT fk_user_class_question__class_question FOREIGN KEY (id_question, id_class) REFERENCES class_question(id_question, id_class) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO users (document_no, name, last_name, middle_name, email, phone_no, username, password)
+INSERT INTO users (document, name, last_name, middle_name, email, phone, username, password)
 VALUES('183139613', 'Cristian Andrés', 'Flores', 'Sandoval', 'demo@demo.com', '+56973234391', 'demo', '$2a$10$5DLMiodMYuNoEeeBQJrSp.yyiq2LEKlOqbK.ISXMPs.CrMk1cXTt2');
 
 -- ----------------------------

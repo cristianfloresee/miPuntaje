@@ -19,7 +19,7 @@ const colors = require('colors');
 const _routes = require('./app/routes/v1');
 const _error = require('./app/middlewares/error');
 
-
+let io;
 //const serveIndex = require('serve-index');
 
 // ----------------------------------------
@@ -34,7 +34,7 @@ function initWebServer() {
 
     let app = express();
     let httpServer = http.Server(app);
-    let io = socket(httpServer);
+    io = socket(httpServer);
     let num_connections = 0;
 
 
@@ -72,6 +72,12 @@ function initWebServer() {
                 num_connections++;
                 console.log(`\nuser ip ${socket.handshake.address} has connected...\nconnected users: ${num_connections}`)
 
+
+                // Emitir y esuchar eventos...
+
+
+                // Escucha los eventos 'disconnect'
+                //this.socket.disconnect(socket); // Función modularizado para escuchar desconnect
                 socket.on('disconnect', () => {
                     num_connections--;
                     console.log(`\nuser disconnected...\nconnected users: ${num_connections}`)
@@ -84,3 +90,9 @@ function initWebServer() {
 
     })()
 }
+
+function getSocket(){
+    return io;
+}
+
+module.exports.getSocket = getSocket;

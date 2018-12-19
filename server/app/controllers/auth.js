@@ -11,7 +11,7 @@ const pool = require('../database');
 // ----------------------------------------
 // Login
 // ----------------------------------------
-async function login(req, res) {
+async function login(req, res, next) {
     try {
         const {
             email,
@@ -19,7 +19,7 @@ async function login(req, res) {
         } = req.body;
 
         console.log("nee");
-        const text = 'SELECT id_user, name, last_name, middle_name, document_no, email, phone_no, username, password, active, profile_image, created_at, updated_at FROM users WHERE email = $1';
+        const text = 'SELECT id_user, name, last_name, middle_name, document, email, phone, username, password, active, profile_image, created_at, updated_at FROM users WHERE email = $1';
         const values = [email];
         const {
             rows
@@ -41,9 +41,9 @@ async function login(req, res) {
                 })
         }
 
-        const text2 = 'SELECT id_role FROM user_role WHERE id_user = $1 ORDER BY id_role';
+        const text2 = 'SELECT role FROM roles WHERE id_user = $1 ORDER BY role';
         const values2 = [user.id_user];
-        const roles = (await pool.query(text2, values2)).rows.map(role => role.id_role);
+        const roles = (await pool.query(text2, values2)).rows.map(role => role.role);
         user.roles = roles;
 
         delete user.password; //ELIMINA LA PASSWORD DEL OBJETO USUARIO

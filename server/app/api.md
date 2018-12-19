@@ -119,7 +119,7 @@ Cada recurso contiene un objeto con información sobre la respuesta.
 SELECT a.id_activity, a.name, a.mode, a.status, a.created_at, a.updated_at, c.id_class, c.description AS lesson, m.id_module, m.name AS module, 
 CASE WHEN EXISTS (
   SELECT id_user 
-  FROM activity_student AS au 
+  FROM activity_user AS au 
   WHERE id_activity = a.id_activity
   ) THEN TRUE ELSE FALSE END AS winners 
 FROM activities AS a 
@@ -147,13 +147,13 @@ https://github.com/jackc/pgx/issues/281
 ```sql
 SELECT u.id_user, u.name, u.last_name, u.middle_name 
 FROM users AS u 
-INNER JOIN activity_student AS au 
+INNER JOIN activity_user AS au 
 ON au.id_user = u.id_user 
 WHERE au.status = true AND au.id_activity = $1;
 ```
 
 
-CASE WHEN EXISTS (SELECT cu.id_user FROM course_student AS cu WHERE cu.id_user = u.id_user AND id_course = $1) THEN TRUE ELSE FALSE END AS enrolled 
+CASE WHEN EXISTS (SELECT cu.id_user FROM course_user AS cu WHERE cu.id_user = u.id_user AND id_course = $1) THEN TRUE ELSE FALSE END AS enrolled 
 
 
 ## Obtener Clases por ID de Curso o ID de modulo

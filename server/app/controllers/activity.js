@@ -51,7 +51,7 @@ async function getActivities(req, res, next) {
         const text = `SELECT a.id_activity, a.name, a.mode, a.status, a.created_at, a.updated_at, c.id_class, c.description AS lesson, m.id_module, m.name AS module, 
         CASE WHEN EXISTS (
             SELECT id_user 
-            FROM activity_student AS au 
+            FROM activity_user AS au 
             WHERE id_activity = a.id_activity 
             AND status = 3
         ) THEN TRUE ELSE FALSE END AS winners 
@@ -146,7 +146,7 @@ async function getStudentsByActivityID(req, res, next) {
         const id_activity = req.query.id_activity;
         console.log("get students by activity: ", id_activity);
         const text = `SELECT u.id_user, u.name, u.last_name, u.middle_name, au.status 
-        FROM activity_student AS au 
+        FROM activity_user AS au 
         INNER JOIN users AS u 
         ON au.id_user = u.id_user 
         WHERE id_activity = $1`;
@@ -187,7 +187,7 @@ function updateParticipation(id_activity, array_participation) {
     array_participation.map(participation => Object.assign(participation, { id_activity }));
 
     const text2 = `
-	UPDATE activity_student AS au 
+	UPDATE activity_user AS au 
 	SET status = s.status 
 	FROM (
 		SELECT (a->>'id_activity')::int AS id_activity, (a->>'id_user')::int AS id_user, (a->>'status')::int AS status
