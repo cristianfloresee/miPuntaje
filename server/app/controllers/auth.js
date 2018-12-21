@@ -7,18 +7,20 @@ const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const status = require('http-status');
 const pool = require('../database');
+const socket = require('../../server');
 
 // ----------------------------------------
 // Login
 // ----------------------------------------
 async function login(req, res, next) {
     try {
+        // Body Params 
         const {
             email,
             password
         } = req.body;
 
-        console.log("nee");
+
         const text = 'SELECT id_user, name, last_name, middle_name, document, email, phone, username, password, active, profile_image, created_at, updated_at FROM users WHERE email = $1';
         const values = [email];
         const {
@@ -55,13 +57,18 @@ async function login(req, res, next) {
                 expiresIn: process.env.TOKEN_EXPIRATION
             });
 
+
+        // No puedo insertar directamente el socket 
+        //let io = socket.getSocket();
+        //io.emit('delete_enrollment');
+
         res.json({
             token,
             user
         })
 
     } catch (error) {
-        next({ error});
+        next({ error });
     }
 }
 
