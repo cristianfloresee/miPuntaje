@@ -11,13 +11,16 @@ var api = express.Router();
 // ----------------------------------------
 // Routes and Controllers
 // ----------------------------------------
-api.get('/', checkToken, userController.getUsers);
+//api.get('/', checkToken, userController.getUsers);
+api.get('/', userController.getUsers);
 //api.get('/:page?', checkToken, userController.getUsers);
 api.get('/students', userController.getUsersStudents);
-api.get('/count', checkToken, userController.countUser);
+//api.get('/count', checkToken, userController.countUser);
+api.get('/count', userController.countUser);
 api.get('/:userId', userController.getUserByUserId);
 api.post('/create', userController.createUser);
-api.put('/update/:userId', checkToken, userController.updateUser);
+//api.put('/update/:userId', checkToken, userController.updateUser);
+api.put('/update/:userId', userController.updateUser);
 api.delete('/delete/:userId', userController.deleteUser);
 
 //api.get('/:userId/:page?', colorController.getColorsByUserId);

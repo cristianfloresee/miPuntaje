@@ -12,6 +12,7 @@ var api = express.Router();
 // Routes and Controllers
 // ----------------------------------------
 api.get('/select_options', subcategoryController.getSubcategoryOptions); //Opciones para el Selector
+api.get('/last', subcategoryController.getLastSubcategories);
 api.get('/', subcategoryController.getSubcategories);
 api.post('/', subcategoryController.createSubcategory);
 api.put('/:subcategoryId', subcategoryController.updateSubcategory);

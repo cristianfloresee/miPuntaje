@@ -6,96 +6,127 @@
 const pool = require('../database');
 
 async function getCourses(req, res, next) {
+
     try {
-        const search = req.query.search;
-        const from = Number(req.query.from);
-        const limit = Number(req.query.limit);
-        const last_by_techer = req.query.last_by_teacher;
-        const all_courses_by_teacher = req.query.all_courses_by_teacher;
+        // Query Params
+        const id_user = req.query.id_user || null;
+        const page_size = req.query.page_size || 20;
+        const page = req.query.page || 1;
+        const code = req.query.code || null;
 
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
 
-        let values, query;
-        let promises = [];
-
-
-        //OBTENER DETALLES DEL CURSO
-        const id_user = req.query.id_user;
-        const id_course = req.query.id_course;
-        if (id_user && id_course) {
-            const query = `SELECT s.id_subject, s.name AS subject, c.id_course, c.active, c.name, c.code, c.course_goal, c.student_goal, ca.id_calendar, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1 AND id_course = $2;`;
-            const values = [id_user, id_course];
-            const { rows } = await pool.query(query, values);
-            if (rows.length > 0) {
-                return res.send(rows[0])
-            }
-            else {
-                return res.status(400).json({
-                    message: 'No corresponde'
-                })
-            }
-        }
-
-        if (last_by_techer) {
-            const query = `SELECT s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1 ORDER BY c.updated_at DESC LIMIT 5`;
-            const values = [last_by_techer];
-            const { rows } = await pool.query(query, values);
-            console.log(rows);
-            return res.send(rows)
-        }
-
-        if (all_courses_by_teacher) {
-            //console.log("PIKACHUUUUUUUUU");
-            const query = `SELECT s.id_subject, s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, ca.year, ca.semester, c.created_at, c.updated_at FROM courses AS c INNER JOIN subjects AS s ON s.id_subject = c.id_subject INNER JOIN calendars as ca ON ca.id_calendar = c.id_calendar WHERE id_user = $1`;
-            const values = [all_courses_by_teacher]
-            const { rows } = await pool.query(query, values);
-            return res.send(rows)
-        }
-
-        if ((from != undefined) && limit) {
-            values = [limit, from];
-            query = CALENDARS;
-            if (search) {
-                query += ` WHERE year = $3`;
-                values.push(`${search}`);
-            }
-            query += `${PAGINATION}`;
-
-            console.log("query: ", query);
-            console.log("values: ", values);
-
-            promises.push(pool.query(query, values));
-        } else {
-            query = `${CALENDARS_OPTIONS} ORDER BY year, semester`;
-            promises.push(pool.query(query));
-        }
-
-
+        const query = `
+            SELECT s.id_subject, s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, c.active, ca.id_calendar, ca.year, ca.semester, c.created_at, c.updated_at 
+            FROM courses AS c 
+            INNER JOIN subjects AS s 
+            ON s.id_subject = c.id_subject 
+            INNER JOIN calendars as ca 
+            ON ca.id_calendar = c.id_calendar 
+            WHERE ($1::int IS NULL OR id_user = $1)
+            AND ($2::varchar IS NULL OR code = $2)
+            ORDER BY c.updated_at DESC 
+            LIMIT $3 
+            OFFSET $4`;
+        const values = [id_user, code, page_size, from];
         const {
             rows
-        } = (await Promise.all(promises))[0];
-
-        // console.log("query: ", query);
-        // console.log("values: ", values);
-        // console.log("rows: ", rows)
-        // const {
-        //     rows
-        // } = await pool.query(query, values);
-
-        const total = rows.length != 0 ? rows[0].count : 0;
-
-        //console.log("ROW: ", rows);
-        res.json({
-            total,
-            results: rows
+        } = await pool.query(query, values);
+        return res.send({
+            info: {
+                //total_pages: Math.ceil(total_items / page_size),
+                page: page,
+                page_size: page_size,
+                //total_items: parseInt(total_items),
+            },
+            items: rows
         })
+
     } catch (error) {
-        next({ error});
+        next({
+            error
+        });
+    }
+}
+
+// Obtiene los cursos a partir de su código.
+async function getCoursesBy(req, res, next) {
+    try {
+        const code = req.query.code || null;
+        const id_user = req.query.id_user || null;
+
+        const query = `
+        SELECT s.id_subject, s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, ca.year, ca.semester, c.created_at, c.updated_at, 
+        CASE WHEN EXISTS (
+            SELECT cu.id_user 
+            FROM course_user AS cu 
+            WHERE cu.id_course = c.id_course 
+            AND cu.id_user = $1) 
+            THEN TRUE 
+            ELSE FALSE END AS enrolled 
+        FROM courses AS c 
+        INNER JOIN subjects AS s 
+        ON s.id_subject = c.id_subject 
+        INNER JOIN calendars as ca 
+        ON ca.id_calendar = c.id_calendar 
+        WHERE ($2::varchar IS NULL OR code = $2)`;
+        const values = [id_user, code];
+        const {
+            rows
+        } = await pool.query(query, values);
+
+        res.send(rows);
+    } catch (error) {
+        next({
+            error
+        });
+    }
+}
+
+async function getCourseOptions(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+async function getCourseDetail(req, res, next) {
+    try {
+        // Query Params
+        const id_course = req.params.courseId;
+
+        const query = `
+        SELECT s.id_subject, s.name AS subject, c.id_course, c.active, c.name, c.code, c.course_goal, c.student_goal, ca.id_calendar, ca.year, ca.semester, c.created_at, c.updated_at 
+        FROM courses AS c 
+        INNER JOIN subjects AS s 
+        ON s.id_subject = c.id_subject 
+        INNER JOIN calendars AS ca 
+        ON ca.id_calendar = c.id_calendar 
+        WHERE id_course = $1;`;
+        const values = [id_course];
+        const {
+            rows
+        } = await pool.query(query, values);
+        if (rows.length > 0) {
+            return res.send(rows[0])
+        } else {
+            return res.status(400).json({
+                message: 'No se encontró el curso'
+            })
+        }
+
+    } catch (error) {
+        next({
+            error
+        });
     }
 }
 
 
 
-async function createCourse(req, res) {
+async function createCourse(req, res, next) {
 
     try {
         // Body Params 
@@ -129,12 +160,14 @@ async function createCourse(req, res) {
             })
         }
     } catch (error) {
-        next({ error});
+        next({
+            error
+        });
     }
 }
 
 
-async function updateCourse(req, res) {
+async function updateCourse(req, res, next) {
     try {
         const id_course = req.params.courseId;
         const {
@@ -148,16 +181,20 @@ async function updateCourse(req, res) {
 
         let text = 'UPDATE courses SET id_calendar = $1, id_subject = $2, name = $3, course_goal = $4, student_goal = $5, active = $6 WHERE id_course = $7 RETURNING id_course, id_calendar, id_user, id_subject, name, course_goal, student_goal, created_at, updated_at, code, active';
         let values = [id_calendar, id_subject, name, course_goal, student_goal, active, id_course];
-        const { rows } = await pool.query(text, values);
+        const {
+            rows
+        } = await pool.query(text, values);
         //EL PROBLEMA ES QUE NECESITO DEVOLVER UNA RESPUESTA CON JOIN DE TABLAS (courses, calendars, subjects)
         res.json(rows)
 
     } catch (error) {
-        next({ error});
+        next({
+            error
+        });
     }
 }
 
-async function deleteCourse(req, res) {
+async function deleteCourse(req, res, next) {
     try {
         const id_course = req.params.courseId;
         const {
@@ -165,7 +202,9 @@ async function deleteCourse(req, res) {
         } = await pool.query('DELETE FROM courses WHERE id_course = $1', [id_course]);
         res.sendStatus(204);
     } catch (error) {
-        next({ error});
+        next({
+            error
+        });
     }
 }
 
@@ -174,6 +213,9 @@ async function deleteCourse(req, res) {
 // ----------------------------------------
 module.exports = {
     getCourses,
+    getCoursesBy,
+    getCourseDetail,
+    getCourseOptions,
     createCourse,
     updateCourse,
     deleteCourse

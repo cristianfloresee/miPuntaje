@@ -7,123 +7,114 @@ const bcrypt = require('bcrypt-nodejs');
 const pool = require('../database');
 
 
-//SEGMENTOS DE CONSULTA*************************************************************************
-const ROLES =
-    `SELECT id_user, array_agg(role ORDER BY role) AS roles
-    FROM roles
-    GROUP BY id_user`;
-
-const ROLES_FILTER =
-    `SELECT id_user, array_agg(role ORDER BY role) AS roles 
-    FROM roles 
-    GROUP BY id_user 
-    HAVING $3 = ANY(array_agg(role))
-    ORDER BY id_user`;
-
-const PAGINATION =
-    `ORDER BY id_user LIMIT $1 OFFSET $2`;
-
-const USERS_ROLES =
-    `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document, u.email, u.phone, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users 
-    FROM users AS u 
-    INNER JOIN (${ROLES}) AS r 
-    ON u.id_user = r.id_user`;
-
-const USERS_ROLES_WFILTER =
-    `SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document, u.email, u.phone, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles, count(*) OVER() AS total_users 
-    FROM users AS u 
-    INNER JOIN (${ROLES_FILTER}) AS r 
-    ON u.id_user = r.id_user`;
-
-
-
 // ----------------------------------------
 // Get Users
 // ----------------------------------------
-async function getUsers(req, res) {
+async function getUsers(req, res, next) {
     try {
-        const from = Number(req.query.from || 0);
-        const limit = Number(req.query.limit || 10);
+        const search = req.query.search || null;
+        const role = req.query.role || null;
+        const status = req.query.status || null;
+        const page_size = req.query.page_size || 20;
+        const page = req.query.page || 1;
 
-        //PARÁMETROS DE FILTRO OPCIONAL:
-        const search = req.query.search;
-        const role = Number(req.query.role);
-        const status = req.query.status;
-
-
-
-        let values = [limit, from];
-        let query;
-
-        //********************************************************************************************************************************************************* */     
-
-        //SABER SI PONER EL AND EN EL WHERE
-        if (role) {
-            query = `${USERS_ROLES_WFILTER}`;
-            values.push(role);
-        } else query = `${USERS_ROLES}`;
-        //console.log("role...")
-
-        if (status || search) query += ` WHERE `;
-
-        if (status) {
-            query += `u.active = $${values.length + 1}`;
-            values.push(status);
-        }
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
 
 
-        if (search) {
-            let {
-                mquery,
-                mvalues
-            } = searchAnything(search, values.length + 1);
-            query += status ? ` AND ${mquery}` : mquery;
-            values = [...values, ...mvalues];
-            console.log("search...");
-        }
-
-
-        //********************************************************************************************************************************************************* */
-
-        query += ` ${PAGINATION}`;
-
-        //console.log("QUERY: ", query);
-        //console.log("VALUE: ", values);
+        const query = `
+            SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document, u.email, u.phone, u.username, u.active, u.profile_image, u.created_at, u.updated_at, r.roles
+            FROM users AS u 
+            INNER JOIN (
+                SELECT id_user, array_agg(role ORDER BY role) AS roles 
+                FROM roles 
+                GROUP BY id_user 
+                HAVING ($1::int IS NULL OR $1 = ANY(array_agg(role)))
+                ORDER BY id_user
+            ) AS r 
+            ON u.id_user = r.id_user
+            WHERE ($2::bool IS NULL OR u.active = $2)
+            ORDER BY id_user 
+            LIMIT $3 
+            OFFSET $4`;
+        const values = [role, status, page_size, from]
         const {
             rows
         } = await pool.query(query, values);
 
-        const total = rows.length != 0 ? rows[0].total_users : 0;
+        // Obtiene la cantidad total de clases (de acuerdo a los parámetros de filtro)
+        const text2 = `
+        SELECT count(*) 
+        FROM users AS u
+        INNER JOIN (
+            SELECT id_user
+            FROM roles 
+            GROUP BY id_user 
+            HAVING ($1::int IS NULL OR $1 = ANY(array_agg(role)))
+        ) AS r 
+        ON u.id_user = r.id_user
+        WHERE ($2::bool IS NULL OR u.active = $2)`;
+        const values2 = [role, status];
+        const total_items = (await pool.query(text2, values2)).rows[0].count;
+
         res.json({
-            user_payload: req.user_payload,
-            users: rows,
-            total
-        })
+            info: {
+                total_pages: Math.ceil(total_items / page_size),
+                page: page,
+                page_size: page_size,
+                total_items: parseInt(total_items)
+            },
+            items: rows
+        });
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
 async function getUserByUserId(req, res) {
     try {
-        var id_user = req.params.userId;
+        // Params
+        const id_user = req.params.userId;
+
+        const text = `
+        SELECT id_user, name, last_name, middle_name, document, email, phone, username, active, profile_image, created_at, updated_at 
+        FROM users 
+        WHERE id_user = $1`;
+        const values = [id_user];
         const {
             rows
-        } = await pool.query('SELECT id_user, name, last_name, middle_name, document, email, phone, username, active, profile_image, created_at, updated_at FROM users WHERE id_user = $1', [id_user]);
+        } = await pool.query(text, values);
         res.json(rows)
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
 async function getUsersStudents(req, res) {
     try {
-
+        // Query Params
         const document = req.query.document;
         const id_course = req.query.id_course;
 
         //const text = 'SELECT u.id_user, u.name, u.last_name, u.middle_name, u.document FROM roles AS r INNER JOIN users AS u ON r.id_user = u.id_user WHERE role = 3 AND document = $1';
-        const text = `SELECT r.id_user, u.name, u.last_name, u.middle_name, u.document, u.username, u.email, CASE WHEN EXISTS (SELECT cu.id_user FROM course_user AS cu WHERE cu.id_user = u.id_user AND id_course = $1) THEN TRUE ELSE FALSE END AS enrolled FROM roles AS r INNER JOIN users AS u ON r.id_user = u.id_user WHERE role = 3 AND document = $2`;
+        const text = `
+        SELECT r.id_user, u.name, u.last_name, u.middle_name, u.document, u.username, u.email, 
+        CASE WHEN EXISTS (
+            SELECT cu.id_user 
+            FROM course_user AS cu 
+            WHERE cu.id_user = u.id_user 
+            AND id_course = $1) 
+            THEN TRUE 
+            ELSE FALSE END AS enrolled 
+        FROM roles AS r 
+        INNER JOIN users AS u 
+        ON r.id_user = u.id_user 
+        WHERE role = 3 
+        AND document = $2`;
         const values = [id_course, document];
         const {
             rows
@@ -133,7 +124,9 @@ async function getUsersStudents(req, res) {
         })
 
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 async function createUser(req, res) {
@@ -141,13 +134,6 @@ async function createUser(req, res) {
     const client = await pool.pool.connect();
 
     try {
-
-        // Object.keys(req.body).map(key => {
-
-        //     //TRANSFORMA TODO A MINÚSCULA EXCEPTO LOS ROLES
-        //     if(key != roles) req.body[key] = req.body[key].toLowerCase()
-        //     else req.body[key]
-        // }) //PASA TODOS LOS PARÁMETROS DEL BODY A LOWER, MEJORAR SOLO PASANDO ALGUNOS PÁRAMS? CREAR MÉTODO?
 
         const {
             name,
@@ -256,7 +242,9 @@ async function createUser(req, res) {
             })
         }
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     } finally {
         client.release();
     }
@@ -333,13 +321,13 @@ async function updateUser(req, res, next) {
                     //if(result.rowCount != delete_roles.length)
                 }
             })
-     
+
 
             // Finaliza la transacción
             await client.query('COMMIT')
 
             // Obtiene los datos del usuario actualizado (result_update[0] para obtener los datos de la query de actualización)
-            user = result_update[0].rows[0]; 
+            user = result_update[0].rows[0];
         } else if (id_user != req.user_payload.id_user) { //SI SOY DUEÑO DEL ID
             let text = 'UPDATE users SET name = $1, last_name = $2, middle_name = $3, document = $4, email = $5, phone = $6, username = $7 WHERE id_user = $8 RETURNING id_user, name, last_name, middle_name, document, email, phone, username, password, active, profile_image, created_at, updated_at';
             let values = [name, last_name, middle_name, document, email, phone, username, id_user];
@@ -363,7 +351,9 @@ async function updateUser(req, res, next) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        next({ error });
+        next({
+            error
+        });
     } finally {
         client.release();
     }
@@ -380,7 +370,9 @@ async function deleteUser(req, res, next) {
             message: 'successfully deleted user'
         });
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -394,7 +386,9 @@ async function disableUser(req, res) {
             message: 'successfully disabled user'
         });
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 // function login(req, res) {
@@ -492,7 +486,9 @@ async function countUser(req, res) {
             result: rows[0].count
         });
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 

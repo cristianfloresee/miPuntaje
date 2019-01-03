@@ -5,19 +5,18 @@
 // ----------------------------------------
 const pool = require('../database');
 const _file = require('../services/file');
-const socket = require('../../server');
+const socket = require('../..');
 
 
 // ----------------------------------------
-// Get Questions
+// Obtiene las preguntas que ya han sido agregadas a la clase.
 // ----------------------------------------
 async function getLessonQuestions(req, res, next) {
 
+    console.log("NEPE..");
     try {
-
-
         // Query Params
-        const id_lesson = req.query.id_lesson; // Obligatorio
+        const id_lesson = req.query.id_lesson;
         const id_category = req.query.id_category || null;
         const id_subcategory = req.query.id_subcategory || null;
         const difficulty = req.query.difficulty || null;
@@ -83,16 +82,14 @@ async function getLessonQuestions(req, res, next) {
     }
 }
 
-
+// Obtiene las preguntas de la biblioteca de la asignatura e indica cuales han sido agregadas a la clase.
 async function getAllQuestionsForLesson(req, res, next) {
     try {
 
-        console.log("GET LESSON QUESTIONS..");
-        // Query Params
-        //const search = req.query.search;
         const id_user = req.query.id_user;
         const id_subject = req.query.id_subject;
-        const id_lesson = req.query.id_lesson; // Obligatorio por el momento
+        const id_lesson = req.query.id_lesson;
+
         const id_category = req.query.id_category || null;
         const id_subcategory = req.query.id_subcategory || null;
         const difficulty = req.query.difficulty || null;
@@ -107,10 +104,10 @@ async function getAllQuestionsForLesson(req, res, next) {
         // Obtiene las preguntas por id de usuario (profesor) y id de asignatura 
         const text = `SELECT c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, q.updated_at, 
         CASE WHEN EXISTS (
-                SELECT id_question 
-                FROM class_question AS cq
-                WHERE cq.id_question = q.id_question
-                AND cq.id_class = $6
+            SELECT id_question 
+            FROM class_question AS cq
+            WHERE cq.id_question = q.id_question
+            AND cq.id_class = $6
         ) THEN TRUE ELSE FALSE END AS added 
         FROM questions AS q 
         INNER JOIN subcategories AS s 
@@ -164,6 +161,81 @@ async function getAllQuestionsForLesson(req, res, next) {
 
     } catch (error) {
         next({ error });
+    }
+}
+
+async function getQuestionByCourse(req, res, next) {
+    try {
+
+        
+        const id_course = req.params.courseId;
+        console.log("BY COURSE: ", id_course)
+        const id_category = req.query.id_category || null;
+        const id_subcategory = req.query.id_subcategory || null;
+        const difficulty = req.query.difficulty || null;
+        const page_size = req.query.page_size || 20;
+        const page = req.query.page || 1;
+
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
+
+        const text = `
+        SELECT cl.id_class, cl.description AS class, c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, cq.status, cq.added_at, cq.updated_at
+        FROM questions AS q
+        INNER JOIN class_question AS cq
+        ON q.id_question = cq.id_question
+        INNER JOIN classes AS cl
+        ON cq.id_class = cl.id_class
+        INNER JOIN modules AS m
+        ON cl.id_module = m.id_module
+        INNER JOIN subcategories AS s 
+        ON q.id_subcategory = s.id_subcategory 
+        INNER JOIN categories AS c 
+        ON s.id_category = c.id_category
+        WHERE m.id_course = $1
+        AND ($2::int IS NULL OR c.id_category = $2)
+        AND ($3::int IS NULL OR s.id_subcategory = $3)
+        AND ($4::int IS NULL OR q.difficulty = $4)
+        ORDER BY q.updated_at DESC
+        LIMIT $5
+        OFFSET $6`;
+        const values = [id_course, id_category, id_subcategory, difficulty, page_size, from];
+        const {
+            rows
+        } = await pool.query(text, values);
+
+        const text2 = `
+        SELECT count(*)
+        FROM questions AS q
+        INNER JOIN class_question AS cq
+        ON q.id_question = cq.id_question
+        INNER JOIN classes AS cl
+        ON cq.id_class = cl.id_class
+        INNER JOIN modules AS m
+        ON cl.id_module = m.id_module
+        INNER JOIN subcategories AS s 
+        ON q.id_subcategory = s.id_subcategory 
+        INNER JOIN categories AS c 
+        ON s.id_category = c.id_category
+        WHERE m.id_course = $1
+        AND ($2::int IS NULL OR c.id_category = $2)
+        AND ($3::int IS NULL OR s.id_subcategory = $3)
+        AND ($4::int IS NULL OR q.difficulty = $4)`
+        const values2 = [id_course, id_category, id_subcategory, difficulty];
+        const total_items = (await pool.query(text2, values2)).rows[0].count;
+
+        return res.send({
+            info: {
+                total_pages: Math.ceil(total_items / page_size),
+                page: page,
+                page_size: page_size,
+                total_items: parseInt(total_items),
+            },
+            items: rows
+        })
+    }
+    catch(error){
+        next({error})
     }
 }
 
@@ -304,6 +376,7 @@ async function deleteClassQuestion(req, res, next) {
 module.exports = {
     getLessonQuestions,
     getAllQuestionsForLesson,
+    getQuestionByCourse,
     updateLessonQuestions,
     updateLessonQuestion,
     deleteClassQuestion

@@ -62,6 +62,24 @@ async function getLessons(req, res, next) {
     }
 }
 
+async function getClassById(req, res, next){
+
+    try {
+
+        const id_class = req.params.classId;
+        // Obtiene las clases
+        const text = `SELECT id_class, id_module, description, date, created_at, updated_at, status
+        FROM classes
+        WHERE id_class = $1`;
+        const values = [id_class];
+        const { rows } = await pool.query(text, values);
+
+        res.send(rows[0]);
+    } catch (error) {
+        next({ error });
+    }
+}
+
 
 // ----------------------------------------
 // Get Lessons as Select Options
@@ -158,6 +176,7 @@ async function deleteLesson(req, res, next) {
 // ----------------------------------------
 module.exports = {
     getLessons,
+    getClassById,
     getLessonOptions,
     createLesson,
     updateLesson,

@@ -16,6 +16,7 @@ var api = express.Router();
 //api.get('/select_options', _lessonController.getLessonOptions); //Opciones para el Selector
 //api.get('/', _lessonController.getLessons);
 //api.post('/', _lessonController.createLesson);
+api.post('/:activityId', _activityParticipationController.updateActivityParticipations); // Agrega varias preguntas a la biblioteca
 api.put('/:activityId/:userId', _activityParticipationController.updateActivityParticipation);
 //api.delete('/:lessonId', _lessonController.deleteLesson);
 

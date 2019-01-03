@@ -47,13 +47,13 @@ async function getActivities(req, res, next) {
         const from = (page - 1) * page_size;
 
         // Obtiene las Actividades por ID Curso (Parámetros de Filtro Opcionales)
-        // En una parte utiliza status = 3 para mostrar si en una actividad hubieron ganadores
+        // En una parte utiliza status = 2 para mostrar si en una actividad hubieron ganadores
         const text = `SELECT a.id_activity, a.name, a.mode, a.status, a.created_at, a.updated_at, c.id_class, c.description AS lesson, m.id_module, m.name AS module, 
         CASE WHEN EXISTS (
             SELECT id_user 
             FROM activity_user AS au 
             WHERE id_activity = a.id_activity 
-            AND status = 3
+            AND status = 2
         ) THEN TRUE ELSE FALSE END AS winners 
         FROM activities AS a 
         INNER JOIN classes AS c 
@@ -101,7 +101,7 @@ async function updateActivity(req, res, next) {
         const status = req.body.status;
         const array_participation = req.body.array_participation;
 
-        console.log(`id_activity: ${id_activity}, id_class: ${id_class}, name: ${name}, mode: ${mode}, status: ${status}`)
+        //console.log(`id_activity: ${id_activity}, id_class: ${id_class}, name: ${name}, mode: ${mode}, status: ${status}`)
 
         // Inicia la transacción
         client.query('BEGIN');
@@ -144,8 +144,8 @@ async function getCountActivities() {
 async function getStudentsByActivityID(req, res, next) {
     try {
         const id_activity = req.query.id_activity;
-        console.log("get students by activity: ", id_activity);
-        const text = `SELECT u.id_user, u.name, u.last_name, u.middle_name, au.status 
+        //console.log("get students by activity: ", id_activity);
+        const text = `SELECT u.id_user, u.document, u.name, u.last_name, u.middle_name, au.status 
         FROM activity_user AS au 
         INNER JOIN users AS u 
         ON au.id_user = u.id_user 
@@ -179,12 +179,14 @@ async function deleteActivity(req, res) {
 // Actualiza la Participación en la Actividad
 // ----------------------------------------
 function updateParticipation(id_activity, array_participation) {
+    // array_participation: {id_user, status}
 
     // Actualizar múltiples registros en una query: https://stackoverflow.com/questions/37048772/update-multiple-rows-from-multiple-params-in-nodejs-pg
     // Actualizar múltiples registros pasando un array de objetos: https://stackoverflow.com/questions/37059187/convert-object-array-to-array-compatible-for-nodejs-pg-unnest
 
     // Inserta el 'id_activity' en cada registro (Object) del array 'array_participation'
     array_participation.map(participation => Object.assign(participation, { id_activity }));
+    // [ {id_user, id_activity, status} ]
 
     const text2 = `
 	UPDATE activity_user AS au 

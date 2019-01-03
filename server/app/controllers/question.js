@@ -37,7 +37,7 @@ async function getQuestions(req, res, next) {
 
         // Obtiene las preguntas por id de usuario (profesor) y id de asignatura 
         const text = `
-            SELECT su.name AS subject, c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, q.created_at, q.updated_at 
+            SELECT su.id_subject, su.name AS subject, c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, q.created_at, q.updated_at 
             FROM questions AS q 
             INNER JOIN subcategories AS s 
             ON q.id_subcategory = s.id_subcategory 
@@ -93,7 +93,9 @@ async function getQuestions(req, res, next) {
         })
 
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -120,7 +122,7 @@ async function getQuestionOptions(req, res, next) {
 // ----------------------------------------
 // Create Question
 // ----------------------------------------
-async function createQuestion(req, res) {
+async function createQuestion(req, res, next) {
 
     upload(req, res, async (error) => {
 
@@ -145,7 +147,9 @@ async function createQuestion(req, res) {
             res.status(201).send(rows[0]);
         } catch (error) {
             if (file_path) _file.deleteFile(file_path);
-            next({ error });
+            next({
+                error
+            });
         }
     });
 
@@ -157,7 +161,7 @@ async function createQuestion(req, res) {
 async function updateQuestion(req, res, next) {
 
     upload(req, res, async (error) => {
- 
+
         if (error) return res.sendStatus(500);
         const file_path = req.file !== undefined ? req.file.path : undefined;
 
@@ -172,7 +176,7 @@ async function updateQuestion(req, res, next) {
             } = req.body;
             // Params
             const id_question = req.params.questionId;
-            
+
             // Consulta para asegurarme de que existe la pregunta y para obtener la ruta de la imagen actual
             const text1 = 'SELECT id_question, image FROM questions WHERE id_question = $1';
             const values1 = [id_question];
@@ -190,19 +194,21 @@ async function updateQuestion(req, res, next) {
 
             // Si tengo una nueva imagen (o recibo image:null), elimino la imagen que la pregunta tenía anteriormente
             if (file_path || !image) _file.deleteFile(res1[0].image);
-     
+
             // Consulta para actualizar los datos de la pregunta
             const text2 = 'UPDATE questions SET id_subcategory = $1, description = $2, difficulty = $3, image = $4, shared = $5, updated_at = NOW() WHERE id_question = $6 RETURNING *';
             const values2 = [id_subcategory, description, difficulty, file_path ? file_path : image, shared, id_question];
             const res2 = await (pool.query(text2, values2)).rows;
-     
+
             // Envío la respuesta al cliente
             res.json(res2)
 
         } catch (error) {
             // Si ocurrio algun error elimino la imagen recien cargada al servidor
             if (file_path) _file.deleteFile(file_path);
-            next({ error });
+            next({
+                error
+            });
         }
     });
 }
@@ -210,7 +216,7 @@ async function updateQuestion(req, res, next) {
 // ----------------------------------------
 // Delete Question
 // ----------------------------------------
-async function deleteQuestion(req, res) {
+async function deleteQuestion(req, res, next) {
     try {
         const id_question = req.params.questionId;
 
@@ -221,7 +227,9 @@ async function deleteQuestion(req, res) {
         res.sendStatus(204);
 
     } catch (error) {
-        nnext({ error });
+        next({
+             error
+        });
     }
 }
 

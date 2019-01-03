@@ -7,71 +7,44 @@ const status = require('http-status');
 //const uuid4 = require('uuid/v4');
 const pool = require('../database');
 
-
-//FRAGMENTOS DE CONSULTA
-const CALENDARS = 'SELECT id_calendar, year, semester, created_at, updated_at, count(*) OVER() AS count FROM calendars';
-const CALENDARS_OPTIONS = `SELECT id_calendar, year, semester FROM calendars`;
-const PAGINATION = ' ORDER BY id_calendar LIMIT $1 OFFSET $2';
-
 // ----------------------------------------
 // Get Calendars
 // ----------------------------------------
-async function getCalendars(req, res) {
+async function getCalendars(req, res, next) {
     try {
+        // Query Params
+        const year = req.query.year || null;
+        const page_size = req.query.page_size || 20;
+        const page = req.query.page || 1;
 
-        const page = (parseInt(req.query.page) > 0) ? parseInt(req.query.page) : 1; //(NaN OR <0 == 1)
-        const page_size = (parseInt(req.query.page_size) > 0) ? parseInt(req.query.page_size) : 10;
-        //const sort_by = string(req.query.sort_by) || 'year';
-        //const sort_order = string(req.query.sort_order) == 'desc' ? 'desc' : 'asc';
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
 
-        //calculado:
-        //const from = (page - 1) * page_size;
+        const text = `
+        SELECT id_calendar, year, semester, created_at, updated_at
+        FROM calendars
+        WHERE ($1::int IS NULL OR year = $1)
+        ORDER BY id_calendar 
+        LIMIT $2 
+        OFFSET $3`;
+        const values = [year, page_size, from];
+        const { rows } = await pool.query(text, values);
 
-        const search = req.query.search;
-        const from = Number(req.query.from);
-        const limit = Number(req.query.limit);
+        const text2 = `
+        SELECT count(*) 
+        FROM calendars
+        WHERE ($1::int IS NULL OR year = $1)`;
+        const values2 = [year];
+        const total_items = (await pool.query(text2, values2)).rows[0].count;
 
-        let values, query;
-        let promises = [];
-
-        if ((from != undefined) && limit) {
-            values = [limit, from];
-            query = CALENDARS;
-            if (search) {
-                query += ` WHERE year = $3`;
-                values.push(`${search}`);
-            }
-            query += `${PAGINATION}`;
-
-            console.log("query: ", query);
-            console.log("values: ", values);
-
-            promises.push(pool.query(query, values));
-        } else {
-            query = `${CALENDARS_OPTIONS} ORDER BY year, semester`;
-            promises.push(pool.query(query));
-        }
-
-
-        const {
-            rows
-        } = (await Promise.all(promises))[0];
-
-        const text2 = 'SELECT count(*) FROM calendars'
-        const total_items = (await pool.query(text2)).rows[0].count;
-
-        // console.log("query: ", query);
-        // console.log("values: ", values);
-        // console.log("rows: ", rows)
-        // const {
-        //     rows
-        // } = await pool.query(query, values);
-
-
-        res.status(status.OK).json({
-            page: page,
-            page_size: page_size,
-            total_items: parseInt(total_items),
+         // Envía la respuesta al cliente
+         res.json({
+            info: {
+                total_pages: Math.ceil(total_items / page_size),
+                page: page,
+                page_size: page_size,
+                total_items: parseInt(total_items),
+            },
             items: rows
         });
 
@@ -81,9 +54,27 @@ async function getCalendars(req, res) {
 }
 
 // ----------------------------------------
+// Get Calendars as Select Options
+// ----------------------------------------
+async function getCalendarOptions(req, res, next) {
+    try {
+        // Obtiene las categorías
+        const text = `
+        SELECT id_calendar, year, semester 
+        FROM calendars 
+        ORDER BY year, semester`;
+        const { rows } = await pool.query(text);
+
+        // Envía la respuesta al cliente
+        res.json(rows);
+    } catch (error) {
+        next({ error });
+    }
+}
+// ----------------------------------------
 // Create Calendar
 // ----------------------------------------
-async function createCalendar(req, res) {
+async function createCalendar(req, res, next) {
 
     try {
         const {
@@ -106,7 +97,7 @@ async function createCalendar(req, res) {
 // ----------------------------------------
 // Update Calendar
 // ----------------------------------------
-async function updateCalendar(req, res) {
+async function updateCalendar(req, res, next) {
     try {
         const id_calendar = req.params.calendarId;
         const {
@@ -136,7 +127,7 @@ async function updateCalendar(req, res) {
 // ----------------------------------------
 // Delete Calendar
 // ----------------------------------------
-async function deleteCalendar(req, res) {
+async function deleteCalendar(req, res, next) {
     try {
         const id_calendar = req.params.calendarId;
         const text = `DELETE FROM calendars WHERE id_calendar = $1`;
@@ -176,6 +167,7 @@ async function countCalendar(req, res) {
 // ----------------------------------------
 module.exports = {
     getCalendars,
+    getCalendarOptions,
     createCalendar,
     updateCalendar,
     deleteCalendar,

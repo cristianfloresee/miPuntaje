@@ -10,7 +10,7 @@ app.use(file_upload());
 
 //uploads/images/questions/1542488957846.jpg
 app.get('/uploads/images', (req, res) => {
-    console.log("wuwuwuwuwuuw...");
+ 
 })
 
 app.put('/upload/:fileType/:id', (req, res) => {

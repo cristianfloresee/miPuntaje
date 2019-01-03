@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const status = require('http-status');
 const pool = require('../database');
-const socket = require('../../server');
+const socket = require('../..');
 
 // ----------------------------------------
 // Login

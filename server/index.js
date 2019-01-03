@@ -7,8 +7,6 @@
  * 
  * 2_ Lo que yo hago por cada nuevo usuario conectado lo registro en mongodb es mas facil hacer las consultas, cuando se desconecta elimino el usuario.
  */
-
-
 'use strict'
 
 // ----------------------------------------
@@ -21,7 +19,6 @@ require('./app/config/config');
 // ----------------------------------------
 const eValidator = require('express-validator')
 const express = require('express');
-const path = require('path');
 const http = require('http');
 const socket = require('socket.io');
 const bodyParser = require('body-parser');
@@ -31,12 +28,10 @@ const _routes = require('./app/routes/v1');
 const _error = require('./app/middlewares/error');
 const pool = require('./app/database');
 
-//const serveIndex = require('serve-index');
-
 // ----------------------------------------
 // Variables que pueden ser exportadas
 // ----------------------------------------
-let io;
+var io;
 let users_connected = []; // {id_user, id_socket, role}
 let detail_users_connected = []; //{id_user, username, role, courses}
 // ----------------------------------------
@@ -52,26 +47,18 @@ function initWebServer() {
     let app = express();
     let httpServer = http.Server(app);
     io = socket(httpServer);
+    //console.log("io: ", io)
     let num_connections = 0;
 
-
-    //app.use(express.static('uploads '));
     app.use(bodyParser.urlencoded({
         extended: false
     }));
     app.use(bodyParser.json());
-    //app.use(express.static(path.resolve(__dirname, '../public'), { 'dotfiles': 'allow' }));
     app.use(cors({
         origin: '*'
     }));
     app.use(eValidator());
-
-    // ----------------------------------------
-    // Mount API Routes /v1
-    // ----------------------------------------
     app.use(_routes);
-    // app.use(express.static(__dirname + '/'));
-    // app.use('/uploads', serveIndex(__dirname + '/uploads'));
     app.use(_error.logErrors);
     app.use(_error.handler);
 
@@ -83,8 +70,6 @@ function initWebServer() {
             const host = address.address;
             const port = address.port;
 
-            users_connected = []; // {id_user, username, role, socketId, courses }
-
             console.log(` [+] webserver is running on ${host}${port}... ${colors.green.bold('[OK]')}`)
 
             io.on('connection', (socket) => {
@@ -92,36 +77,24 @@ function initWebServer() {
                 num_connections++;
                 console.log(`\nuser ip ${socket.handshake.address} has connected...\nconnected users: ${num_connections}`)
 
-
-                // Permite mantener un listado de usuarios junto a sus cursos. (es mejor usar redis o mongo)
+                // Permite mantener un listado de usuarios junto a sus cursos. 
+                // + Es mejor usar redis o mongo para mantener este listado.
                 socket.on('connectedUser', async (data) => {
-                    console.log("connectedUser listened: ", data);
 
-                    // Ver por siacaso si ya existe el user socket
+                    // Ve si ya existe el usuario (de acuerdo al id_socket)
                     let user_exist = users_connected.find(user => user.id_socket == socket.id);
-                    // Si existe solo actualizo la data:
-                    
 
-                    if(user_exist) {
+                    // Si existe, solo actualizo la data (id_user, role)
+                    if (user_exist) {
                         user_exist.id_user = data.id_user;
                         user_exist.role = data.role;
                     }
-                    else{
-                        // Aqui la cago porque agrego un usuario sin id_user y porque este evento se ejecuta primero que el connected_user
+                    // Si el usuario no existe, lo agrego
+                    else {
                         addUsersConnected(data, socket.id);
                     }
-                    // Ver si ya existe el usuario
-                    //let user_exist = detail_users_connected.find(user => user.id_user == data.id_user);
 
-                    //console.log("USER EXIST: ", user_exist);
-                    // Agrego al usuario a la lista de usuarios conectados (pueden haber 2 sesiones para el mismo usuario)
-                    //addUsersConnected(data, socket.id);
-                    // Si el usuario ya tenia una sesión, ...
-                    //if (!user_exist) updateUserConnected(user_exist, socket.id);
-
-
-
-
+                    //socket.emit('usersConnectedHasChanged', getusersConnected());
                     // Obtiene los cursos 
                     /*if (data.role == 2) {
                         console.log("usuario role profesor...");
@@ -139,27 +112,30 @@ function initWebServer() {
                         const values = [data.id_user];
                         const res = (await pool.query(text, values)).rows[0];
                     }*/
-
-
                 });
+
+                // data: { id_user, }
+                /*socket.on('studentEnrolled', (data)=> {
+                    console.log("studentEnrolled: ", data);
+                });*/
 
                 // data: {id_user, role}
                 socket.on('updateRoleToUserConnected', (data) => {
-                    
+
                     console.log("updateRoleToUserConnected: ", data);
-                    ///updateUserConnected(socket.id, data)
-                    // Busca al usuario socket dentro de 'users_connected'
-                    let user_exist = users_connected.find(user => user.id_socket == socket.id);
-                    if(user_exist) {
+
+                    // Ve si ya existe el usuario (de acuerdo al id_socket)
+                    const user = users_connected.find(user => user.id_socket == socket.id);
+                    if (user) {
                         // Si lo encuentra actualiza su role
-                        user_exist.role = data.role;
-                        
+                        user.role = data.role;
+
                         console.log("CHANGE ROLE: ", users_connected);
-                    }
-                    else{
+                    } else {
                         // Aqui la cago porque agrego un usuario sin id_user y porque este evento se ejecuta primero que el connected_user
                         addUsersConnected(data, socket.id);
                     }
+                    //socket.emit('usersConnectedHasChanged', getusersConnected());
 
                 });
 
@@ -172,7 +148,11 @@ function initWebServer() {
 
                 });
 
-
+                socket.on('disconnectedUser', () => {
+                    const index_user = users_connected.findIndex(user => user.id_socket == socket.id);
+                    if (index_user >= 0) users_connected.splice(index_user, 1)
+                    console.log("disconnectedUser: ", users_connected);
+                });
 
 
                 // Escucha los eventos 'disconnect'
@@ -180,24 +160,21 @@ function initWebServer() {
                 socket.on('disconnect', () => {
                     num_connections--;
                     console.log(`\nuser disconnected...\nconnected users: ${num_connections}`);
-                    deleteUserConnected(socket.id)
-                })
+                    deleteUserConnected(socket.id);
+                    //socket.emit('usersConnectedHasChanged', getusersConnected());
+                });
 
             })
         } catch (error) {
             console.log(error);
         }
 
-    })()
+    })();
 }
 
-function getSocket() {
-    return io;
-}
 
-function getusersConnected() {
-    return users_connected;
-}
+
+
 
 function getuserConnected(id_user) {
     return users_connected.find(user => user.id_user == id_user);
@@ -208,9 +185,7 @@ function getusersConnectedByRoom(room) {
 }
 
 function addUsersConnected(user, id_socket) {
-    console.log("FUNCTION addUsersConnected---");
     //getCourses(data.id_user, data.role);
-
     users_connected.push({
         'id_user': user.id_user,
         //'username': user.username,
@@ -248,14 +223,25 @@ function getCourses(id_user, user_role) {
     }
     if (user_role == 2) {
         console.log("TEACHER ROLE...");
-    }
-    else if (user_role == 3) {
+    } else if (user_role == 3) {
         console.log("STUDENT ROLE...");
     }
 
 }
+// ----------------------------------------
 
+module.exports.getSocket = () => {
+    return io;
+}
+
+module.exports.getusersConnected = () => {
+    return users_connected;
+}
+
+/*
 module.exports = {
-    getSocket,
+    getSocket: () => io,
     getusersConnected,
-};
+};*/
+
+//module.exports.getSocket = getSocket;

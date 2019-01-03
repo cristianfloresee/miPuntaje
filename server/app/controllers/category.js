@@ -28,12 +28,12 @@ const PAGINATION = ' ORDER BY id_category LIMIT $1 OFFSET $2';
         const id_subject = req.query.id_subject;
 
 
-        console.log(`kilawa.. id_user: ${id_user}, id_subject: ${id_subject}`);
+       
         //OBTIENE LAS CATEGORIAS DE UN PROFESOR, PARA UNA ASIGNATURA ESPECÍFICA
         if (id_user && id_subject) {
             const text = `SELECT id_category, name FROM categories WHERE id_user = $1 AND id_subject = $2;`;
             const values = [id_user, id_subject];
-            console.log("chorizo: ", text);
+    
             const { rows } = await pool.query(text, values);
             return res.send(rows)
         }
@@ -119,7 +119,9 @@ async function getCategories(req, res, next) {
         LIMIT $3 
         OFFSET $4`;
         const values = [id_user, id_subject, page_size, from];
-        const { rows } = await pool.query(text, values);
+        const {
+            rows
+        } = await pool.query(text, values);
 
         // Obtiene la cantidad total de clases (de acuerdo a los parámetros de filtro)
         const text2 = `
@@ -139,9 +141,11 @@ async function getCategories(req, res, next) {
                 total_items: parseInt(total_items),
             },
             items: rows
-        })
+        });
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -158,12 +162,16 @@ async function getCategoryOptions(req, res, next) {
         // Obtiene las categorías
         const text = 'SELECT id_category, name FROM categories WHERE id_user = $1 AND id_subject = $2 ORDER BY name';
         const values = [id_user, id_subject];
-        const { rows } = await pool.query(text, values);
+        const {
+            rows
+        } = await pool.query(text, values);
 
         // Envía la respuesta al cliente
         res.json(rows);
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -196,7 +204,9 @@ async function createCategory(req, res, next) {
             })
         }
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -220,7 +230,9 @@ async function updateCategory(req, res, next) {
         res.json(res2)
 
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -238,7 +250,37 @@ async function deleteCategory(req, res, next) {
         // Envía la respuesta al cliente
         res.sendStatus(204);
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
+    }
+}
+
+async function getLastCategories(req, res, next) {
+    console.log("GET LAST CATEGORIES...");
+    try {
+        const id_user = req.query.id_user; 
+        const page_size = req.query.page_size || null;
+
+        const text = `SELECT s.id_subject, s.name AS subject, c.id_category, c.name, c.created_at, c.updated_at 
+        FROM categories AS c 
+        INNER JOIN subjects AS s 
+        ON s.id_subject = c.id_subject 
+        WHERE c.id_user = $1 
+        AND c.name != 'DEFAULT'
+        ORDER BY c.updated_at DESC 
+        LIMIT $2`;
+        const values = [id_user, page_size];
+        const {
+            rows
+        } = await pool.query(text, values);
+
+        res.json(rows);
+
+    } catch (error) {
+        next({
+            error
+        });
     }
 }
 
@@ -248,6 +290,7 @@ async function deleteCategory(req, res, next) {
 module.exports = {
     getCategories,
     getCategoryOptions,
+    getLastCategories,
     createCategory,
     updateCategory,
     deleteCategory

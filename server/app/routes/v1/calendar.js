@@ -14,10 +14,10 @@ var api = express.Router();
 // Routes and Controllers
 // ----------------------------------------
 api.get('/', calendarController.getCalendars);
-// api.get('/:userId', colorController.getColorsByUserId);
-api.post('/create', validation.calendar, validate.checkResult, calendarController.createCalendar);
-api.put('/update/:calendarId', validation.calendar, validate.checkResult, calendarController.updateCalendar);
-api.delete('/delete/:calendarId', calendarController.deleteCalendar);
+api.get('/select_options', calendarController.getCalendarOptions); //Opciones para el Selector
+api.post('/', validation.calendar, validate.checkResult, calendarController.createCalendar);
+api.put('/:calendarId', validation.calendar, validate.checkResult, calendarController.updateCalendar);
+api.delete('/:calendarId', calendarController.deleteCalendar);
 api.get('/count', calendarController.countCalendar);
 
 // ----------------------------------------
