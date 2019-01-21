@@ -257,7 +257,6 @@ async function deleteCategory(req, res, next) {
 }
 
 async function getLastCategories(req, res, next) {
-    console.log("GET LAST CATEGORIES...");
     try {
         const id_user = req.query.id_user; 
         const page_size = req.query.page_size || null;

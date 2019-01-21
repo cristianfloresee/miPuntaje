@@ -10,6 +10,7 @@ async function getCourses(req, res, next) {
     try {
         // Query Params
         const id_user = req.query.id_user || null;
+        const id_subject = req.query.id_subject || null;
         const page_size = req.query.page_size || 20;
         const page = req.query.page || 1;
         const code = req.query.code || null;
@@ -17,6 +18,7 @@ async function getCourses(req, res, next) {
         // Calcula el from a partir de los params 'page' y 'page_size'
         const from = (page - 1) * page_size;
 
+        console.log(`id_user: ${id_user}, id_subject: ${id_subject}`);
         const query = `
             SELECT s.id_subject, s.name AS subject, c.id_course, c.name, c.code, c.course_goal, c.student_goal, c.active, ca.id_calendar, ca.year, ca.semester, c.created_at, c.updated_at 
             FROM courses AS c 
@@ -24,12 +26,13 @@ async function getCourses(req, res, next) {
             ON s.id_subject = c.id_subject 
             INNER JOIN calendars as ca 
             ON ca.id_calendar = c.id_calendar 
-            WHERE ($1::int IS NULL OR id_user = $1)
-            AND ($2::varchar IS NULL OR code = $2)
+            WHERE ($1::int IS NULL OR c.id_user = $1)
+            AND ($2::varchar IS NULL OR c.code = $2)
+            AND ($3::int IS NULL OR c.id_subject = $3)
             ORDER BY c.updated_at DESC 
-            LIMIT $3 
-            OFFSET $4`;
-        const values = [id_user, code, page_size, from];
+            LIMIT $4 
+            OFFSET $5`;
+        const values = [id_user, code, id_subject, page_size, from];
         const {
             rows
         } = await pool.query(query, values);

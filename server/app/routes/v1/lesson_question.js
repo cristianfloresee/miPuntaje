@@ -13,6 +13,7 @@ var api = express.Router();
 // ----------------------------------------
 api.get('/', _lessonQuestionController.getLessonQuestions);
 api.get('/all', _lessonQuestionController.getAllQuestionsForLesson);
+api.get('/course_questions', _lessonQuestionController.getCourseQuestions);
 api.get('/course/:courseId', _lessonQuestionController.getQuestionByCourse);
 //api.get('/select_options', _questionController.getQuestionOptions); //Opciones para el Selector
 //api.get('/:userId', colorController.getColorsByUserId);

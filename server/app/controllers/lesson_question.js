@@ -5,15 +5,13 @@
 // ----------------------------------------
 const pool = require('../database');
 const _file = require('../services/file');
-const socket = require('../..');
-
+var socket = require('../../index');
 
 // ----------------------------------------
 // Obtiene las preguntas que ya han sido agregadas a la clase.
 // ----------------------------------------
 async function getLessonQuestions(req, res, next) {
 
-    console.log("NEPE..");
     try {
         // Query Params
         const id_lesson = req.query.id_lesson;
@@ -78,7 +76,9 @@ async function getLessonQuestions(req, res, next) {
         })
 
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -86,6 +86,7 @@ async function getLessonQuestions(req, res, next) {
 async function getAllQuestionsForLesson(req, res, next) {
     try {
 
+        // Query Params
         const id_user = req.query.id_user;
         const id_subject = req.query.id_subject;
         const id_lesson = req.query.id_lesson;
@@ -93,6 +94,7 @@ async function getAllQuestionsForLesson(req, res, next) {
         const id_category = req.query.id_category || null;
         const id_subcategory = req.query.id_subcategory || null;
         const difficulty = req.query.difficulty || null;
+
         const page_size = req.query.page_size || 20;
         const page = req.query.page || 1;
 
@@ -102,13 +104,16 @@ async function getAllQuestionsForLesson(req, res, next) {
         console.log(`id_lesson: ${id_lesson}, id_category: ${id_category}, id_subcategory: ${id_subcategory}, difficulty: ${difficulty}, page_size: ${page_size}, page: ${page}`);
 
         // Obtiene las preguntas por id de usuario (profesor) y id de asignatura 
+        // Me sirve { id_course}
         const text = `SELECT c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, q.updated_at, 
+        
         CASE WHEN EXISTS (
             SELECT id_question 
             FROM class_question AS cq
             WHERE cq.id_question = q.id_question
             AND cq.id_class = $6
         ) THEN TRUE ELSE FALSE END AS added 
+        
         FROM questions AS q 
         INNER JOIN subcategories AS s 
         ON q.id_subcategory = s.id_subcategory 
@@ -117,6 +122,7 @@ async function getAllQuestionsForLesson(req, res, next) {
         INNER JOIN subjects AS su 
         ON c.id_subject = su.id_subject 
         WHERE id_user = $1 
+
         AND ($2::int IS NULL OR su.id_subject = $2)
         AND ($3::int IS NULL OR c.id_category = $3)
         AND ($4::int IS NULL OR s.id_subcategory = $4)
@@ -160,14 +166,16 @@ async function getAllQuestionsForLesson(req, res, next) {
         })
 
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
 async function getQuestionByCourse(req, res, next) {
     try {
 
-        
+
         const id_course = req.params.courseId;
         console.log("BY COURSE: ", id_course)
         const id_category = req.query.id_category || null;
@@ -233,13 +241,15 @@ async function getQuestionByCourse(req, res, next) {
             },
             items: rows
         })
-    }
-    catch(error){
-        next({error})
+    } catch (error) {
+        next({
+            error
+        })
     }
 }
 
 // Crea o elimina múltiples preguntas en una clase
+// + Asegurarse que una pregunta no este en otra clase?
 async function updateLessonQuestions(req, res, next) {
     const client = await pool.pool.connect();
 
@@ -286,7 +296,9 @@ async function updateLessonQuestions(req, res, next) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        next({ error });
+        next({
+            error
+        });
     } finally {
         client.release();
     }
@@ -304,17 +316,103 @@ async function updateLessonQuestion(req, res, next) {
             status
         } = req.body;
 
-        const text2 = 'UPDATE class_question SET status = $1 WHERE id_class = $2 AND id_question = $3 RETURNING *';
+        // Si es que se va a iniciar una pregunta
+        // + comprobar que no halla otra pregunta iniciada o detenida en la clase.
+        if (status == 2) {
+            const text8 = `
+        SELECT CASE WHEN EXISTS (
+            SELECT status 
+            FROM class_question
+            WHERE id_class = $1
+            AND id_question != $2
+            AND (status = 2 OR status = 3)
+            ) THEN TRUE ELSE FALSE END AS any_question_started`;
+            const values8 = [id_class, id_question];
+            const any_question_started = (await pool.query(text8, values8)).rows[0].any_question_started;
+            console.log("another_question_started: ", any_question_started);
+
+            // Si es que ya hay una pregunta iniciada, enviar null para que no se inicie la clase
+            if (any_question_started) return res.send(null);
+
+        }
+
+        // Necesito asegurarme que el estado de la pregunta cambio (antes de actualizar)
+        const text3 = `
+        SELECT status 
+        FROM class_question 
+        WHERE id_class = $1
+        AND id_question = $2`;
+        const values3 = [id_class, id_question];
+        const original_status = (await pool.query(text3, values3)).rows[0];
+
+        // Obtiene el id_course y el subject para emitir el evento a la sala del curso
+        const text4 = `
+         SELECT m.id_course, s.name AS subject 
+         FROM modules AS m
+         INNER JOIN classes AS cl
+         ON cl.id_module = m.id_module
+         INNER JOIN courses AS c
+         ON m.id_course = c.id_course
+         INNER JOIN subjects AS s
+         ON c.id_subject = s.id_subject
+         WHERE cl.id_class = $1`;
+        const values4 = [id_class];
+        const {
+            id_course,
+            subject
+        } = (await pool.query(text4, values4)).rows[0];
+
+        // Actualiza la pregunta de clase (class_question)
+        const text2 = `
+        UPDATE class_question 
+        SET status = $1 
+        WHERE id_class = $2 
+        AND id_question = $3 
+        RETURNING *`;
         const values2 = [status, id_class, id_question];
-        const { rows } = await pool.query(text2, values2);
-        // Activar socket...
+        const {
+            rows
+        } = await pool.query(text2, values2);
+
+        // Obtiene el websocket
         let io = socket.getSocket();
-        io.emit('init_question', rows[0]);
-        res.json(rows[0])
+
+        // Obtiene los datos de la pregunta
+        const text5 = `
+        SELECT id_question, difficulty, description 
+        FROM questions
+        WHERE id_question = $1`;
+        const values5 = [id_question];
+        const question = (await pool.query(text5, values5)).rows[0];
+
+        question.status = status;
+
+        // Emite evento a los estudiantes que esten en la sección de juego
+        io.in(id_class + 'play-question-section').emit('playingTheClassQuestion', {
+            question
+        });
+
+        // Emite evento cuando inicia la pregunta
+        if (status == 2 && original_status != status) {
+            console.log(" + notifica a estudiantes el inicio de una clase de pregunta.");
+
+            console.log("MY QUESTION: ", question);
+            io.in(id_course + 'students').emit('classQuestionStarted', {
+                id_course,
+                subject,
+                //question
+                // Necesito pasar la descripción de la pregunta
+                // id_question, description, difficulty, image, id_category, category, id_subcategory, subcategory
+            });
+        }
+
+        res.json(rows[0]);
 
     } catch (error) {
-        next({ error });
-    } 
+        next({
+            error
+        });
+    }
 }
 
 
@@ -363,10 +461,126 @@ async function deleteClassQuestion(req, res, next) {
         res.sendStatus(204);
 
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
+async function getCourseQuestions(req, res, next) {
+    try {
+
+        // Query Params
+        const id_user = req.query.id_user;
+        const id_subject = req.query.id_subject;
+        const id_course = req.query.id_course;
+
+        const id_category = req.query.id_category || null;
+        const id_subcategory = req.query.id_subcategory || null;
+        const difficulty = req.query.difficulty || null;
+
+        const page_size = req.query.page_size || 20;
+        const page = req.query.page || 1;
+
+        // Calcula el from a partir de los params 'page' y 'page_size'
+        const from = (page - 1) * page_size;
+
+        const text = `
+        SELECT t1.subject, t1.id_category, t1.category, t1.id_subcategory, t1.subcategory, t1.id_question, t1.question, t1.difficulty, t1.image, t1.updated_at, t2.id_class, t2.class, t2.module, t2.course
+        FROM (   
+            SELECT su.name AS subject, c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description AS question, q.difficulty, q.image, q.updated_at
+            FROM questions AS q 
+            INNER JOIN subcategories AS s 
+            ON q.id_subcategory = s.id_subcategory 
+            INNER JOIN categories AS c 
+            ON s.id_category = c.id_category 
+            INNER JOIN subjects AS su 
+            ON c.id_subject = su.id_subject 
+            WHERE c.id_user = $1
+            AND su.id_subject = $2
+        ) AS t1
+        LEFT JOIN (
+            SELECT q.id_question, cq.id_class, cl.description AS class, m.name AS module, co.name AS course
+            FROM questions AS q 
+            INNER JOIN class_question AS cq
+            ON q.id_question = cq.id_question
+            INNER JOIN classes AS cl
+            ON cq.id_class = cl.id_class
+            INNER JOIN modules AS m 
+            ON cl.id_module = m.id_module   
+            INNER JOIN courses AS co
+            ON m.id_course = co.id_course
+            WHERE co.id_course = $3
+        ) AS t2
+        ON t1.id_question = t2.id_question
+        WHERE ($4::int IS NULL OR t1.id_category = $4)
+        AND ($5::int IS NULL OR t1.id_subcategory = $5)
+        AND ($6::int IS NULL OR t1.difficulty = $6)
+        ORDER BY t1.updated_at DESC
+        LIMIT $7
+        OFFSET $8
+        `;
+        const values = [id_user, id_subject, id_course, id_category, id_subcategory, difficulty, page_size, from];
+        const {
+            rows
+        } = await pool.query(text, values);
+
+        // Obtiene la cantidad de registros
+
+        const text2 = `
+        SELECT count(*)
+        FROM (   
+            SELECT su.name AS subject, c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description AS question, q.difficulty, q.image, q.updated_at
+            FROM questions AS q 
+            INNER JOIN subcategories AS s 
+            ON q.id_subcategory = s.id_subcategory 
+            INNER JOIN categories AS c 
+            ON s.id_category = c.id_category 
+            INNER JOIN subjects AS su 
+            ON c.id_subject = su.id_subject 
+            WHERE c.id_user = $1
+            AND su.id_subject = $2
+        ) AS t1
+        LEFT JOIN (
+            SELECT q.id_question, cq.id_class, cl.description AS class, m.name AS module, co.name AS course
+            FROM questions AS q 
+            INNER JOIN class_question AS cq
+            ON q.id_question = cq.id_question
+            INNER JOIN classes AS cl
+            ON cq.id_class = cl.id_class
+            INNER JOIN modules AS m 
+            ON cl.id_module = m.id_module   
+            INNER JOIN courses AS co
+            ON m.id_course = co.id_course
+            WHERE co.id_course = $3
+        ) AS t2
+        ON t1.id_question = t2.id_question
+        WHERE ($4::int IS NULL OR t1.id_category = $4)
+        AND ($5::int IS NULL OR t1.id_subcategory = $5)
+        AND ($6::int IS NULL OR t1.difficulty = $6)
+        `;
+        const values2 = [id_user, id_subject, id_course, id_category, id_subcategory, difficulty];
+        const total_items = (await pool.query(text2, values2)).rows[0].count;
+
+
+        // Envía la respuesta al cliente
+        return res.send({
+            info: {
+                total_pages: Math.ceil(total_items / page_size),
+                page: page,
+                page_size: page_size,
+                total_items: parseInt(total_items),
+            },
+            items: rows
+        });
+
+
+    } catch (error) {
+        next({
+            error
+        });
+    }
+}
 
 
 
@@ -374,6 +588,7 @@ async function deleteClassQuestion(req, res, next) {
 // Export Modules
 // ----------------------------------------
 module.exports = {
+    getCourseQuestions,
     getLessonQuestions,
     getAllQuestionsForLesson,
     getQuestionByCourse,

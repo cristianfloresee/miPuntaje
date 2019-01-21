@@ -4,8 +4,6 @@
 // Load Modules
 // ----------------------------------------
 const pool = require('../database');
-//const socket = require('../../server');
-//var socket = require('../../index');
 var socket = require('../../index');
 
 async function getEnrollmentsByUserId(req, res, next) {
@@ -26,7 +24,6 @@ async function getEnrollmentsByUserId(req, res, next) {
         AND cu.active = TRUE`
         const values1 = [id_user];
         const res1 = (await pool.query(text1, values1)).rows;
-        console.log("ENROLLMENTS BY USERID: ", res1);
 
         res.json(res1)
 
@@ -41,7 +38,6 @@ async function getEnrollmentsByUserId(req, res, next) {
 async function createEnrollment(req, res, next) {
 
     try {
-
         // Body Params
         const {
             id_user,
@@ -54,7 +50,7 @@ async function createEnrollment(req, res, next) {
         const text = `INSERT INTO course_user(id_user, id_course) VALUES($1, $2) RETURNING enrolled_at`;
         const values = [id_user, id_course];
         const enrollment_created = (await pool.query(text, values)).rows[0];
-        // console.log("enrollment created: ", enrollment_created);
+        //console.log("enrollment created: ", enrollment_created);
 
 
         // Query para obtener toda la data de la matrícula y estudiante que será mandada por socket
@@ -83,11 +79,19 @@ async function createEnrollment(req, res, next) {
         let user_enrolled = users_connected.filter(user => user.id_user == id_user);
         // Filtro solo los id_socket del usuario
         user_enrolled = user_enrolled.map(user => user.id_socket);
-        // Emito el evento a las sesiones del usuario conectado.
-        // + Necesito enviar el nombre de la asignatura.
-        // + ¿Como actualizo el menú?
-        io.in(user_enrolled).emit('studentEnrolled', rows[0]);
 
+        // Emito el evento a las sesiones del usuario conectado
+        // Emite el evento a las sesiones del usuario conectado.
+        io.in(user_enrolled).emit('studentEnrolled', rows[0]);
+        // Emite evento a los usuarios que estan dentro de la sala
+        // + Profesor cuando entra a la sección estudiantes del curso
+        io.in(id_course).emit('studentEnrolled', rows[0]);
+
+        // ++ Emito el evento a los profesores también
+        // ++ O Emito evento a todos los usuarios que pertenezcan al curso
+        //io.in(user_enrolled).emit('studentEnrolled', rows[0]);
+        
+        
         // Envía respuesta al cliente
         res.send({});
 
@@ -212,6 +216,9 @@ async function deleteEnrollment(req, res, next) {
         user_enrolled = user_enrolled.map(user => user.id_socket)
         // Emite el evento a las sesiones del usuario conectado.
         io.in(user_enrolled).emit('studentEnrollmentDeleted', rows[0]);
+        // Emite evento a los usuarios que estan dentro de la sala
+        // + Profesor cuando entra a la sección estudiantes del curso
+        io.in(id_course).emit('studentEnrollmentDeleted', rows[0])
 
         res.sendStatus(204);
     } catch (error) {

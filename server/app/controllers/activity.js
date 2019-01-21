@@ -4,7 +4,7 @@
 // Load Modules
 // ----------------------------------------
 const pool = require('../database');
-
+var socket = require('../../index');
 // ----------------------------------------
 // Crear Actividad
 // ----------------------------------------
@@ -22,10 +22,26 @@ async function createActivity(req, res, next) {
         const values = [id_lesson, name, mode];
         await pool.query(text, values);
 
+        const text2 = `
+        SELECT m.id_course 
+        FROM modules AS m
+        INNER JOIN classes AS c
+        ON m.id_module = c.id_module
+        WHERE c.id_class = $1`;
+        const values2 = [id_lesson];
+        const id_course = (await pool.query(text2, values2)).rows[0].id_course;
+
+        // Obtiene el websocket
+        let io = socket.getSocket();
+        //console.log(`Emite evento a la sala: ${id_course+'class-section-room'}`)
+        io.in(id_course + 'activity-section-room').emit('activityCreated');
+
         //res.sendStatus(201); // Error: Unexpected token JSON at position 0
         res.status(201).send(); // Funciona
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -65,7 +81,9 @@ async function getActivities(req, res, next) {
         AND ($3::int is null or a.status = $3) 
         LIMIT $4 OFFSET $5`;
         const values = [id_course, mode, status, page_size, from];
-        const { rows } = await pool.query(text, values);
+        const {
+            rows
+        } = await pool.query(text, values);
 
         // Obtiene la cantidad total de Actividades por ID Curso (Parámetros de Filtro Opcionales)
         const text2 = 'SELECT count(*) FROM activities WHERE id_class IN (SELECT id_class FROM classes WHERE id_module IN (SELECT id_module FROM modules WHERE id_course = $1)) AND ($2::int is null or mode = $2) AND ($3::int is null or status = $3)';
@@ -83,7 +101,9 @@ async function getActivities(req, res, next) {
             items: rows
         });
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -101,17 +121,41 @@ async function updateActivity(req, res, next) {
         const status = req.body.status;
         const array_participation = req.body.array_participation;
 
-        //console.log(`id_activity: ${id_activity}, id_class: ${id_class}, name: ${name}, mode: ${mode}, status: ${status}`)
+        // Necesito saber si el estado de la actividad cambio
+        const text3 = `SELECT status FROM activities WHERE id_activity = $1`;
+        const values3 = [id_activity];
+        const original_status = (await pool.query(text3, values3)).rows[0];
+
+        // Obtiene el id_course y el subject para emitir el evento a la sala del curso
+        const text4 = `
+         SELECT m.id_course, s.name AS subject 
+         FROM modules AS m
+         INNER JOIN classes AS cl
+         ON cl.id_module = m.id_module
+         INNER JOIN courses AS c
+         ON m.id_course = c.id_course
+         INNER JOIN subjects AS s
+         ON c.id_subject = s.id_subject
+         WHERE id_class = $1`;
+        const values4 = [id_class];
+        const {
+            id_course,
+            subject
+        } = (await pool.query(text4, values4)).rows[0];
+
 
         // Inicia la transacción
         client.query('BEGIN');
 
         // Array para ejecutar consultas en paralelo
         let promises = [];
-        
+
         // Actualiza los datos de la actividad
         if (id_class && name && mode && status != undefined) {
-            const text1 = 'UPDATE activities SET id_class = $1, name = $2, mode = $3, status = $4 WHERE id_activity = $5';
+            const text1 = `
+            UPDATE activities 
+            SET id_class = $1, name = $2, mode = $3, status = $4 
+            WHERE id_activity = $5`;
             const values1 = [id_class, name, mode, status, id_activity];
             // Agrega la query al array 'promises'
             promises.push(client.query(text1, values1));
@@ -119,7 +163,10 @@ async function updateActivity(req, res, next) {
 
         // Actualiza la participación en la actividad
         if (array_participation.length > 0) {
-            const { text2, values2 } = updateParticipation(id_activity, array_participation);
+            const {
+                text2,
+                values2
+            } = updateParticipation(id_activity, array_participation);
             // Agrega la query al array 'promises'
             promises.push(client.query(text2, values2));
         }
@@ -128,10 +175,30 @@ async function updateActivity(req, res, next) {
         const result_update = await Promise.all(promises);
         // Finaliza la transacción
         await client.query('COMMIT');
+
+
+        // Obtiene el websocket
+        let io = socket.getSocket();
+
+        // Emite evento a todos los estudiantes que esten en la sección de clases de este curso.
+        io.in(id_course + 'activity-section-room').emit('activityUpdated');
+
+        // Si el estado de la actividad es 2 (iniciada) y cambia, se le notifica a los estudiantes del curso.
+        if (status == 2 && original_status != status) {
+            console.log(" + notifica a estudiantes el inicio de una actividad");
+            
+            io.in(id_course + 'students').emit('activityStarted', {
+                id_course,
+                subject
+            });
+        }
+
         // Envía la respuesta
         res.sendStatus(204);
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 
 }
@@ -151,26 +218,47 @@ async function getStudentsByActivityID(req, res, next) {
         ON au.id_user = u.id_user 
         WHERE id_activity = $1`;
         const values = [id_activity];
-        const { rows } = await pool.query(text, values);
+        const {
+            rows
+        } = await pool.query(text, values);
 
         // Envía la Respuesta
         res.json(rows);
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
-async function deleteActivity(req, res) {
+async function deleteActivity(req, res, next) {
     try {
         const id_activity = req.params.activityId;
 
-        const text = 'DELETE FROM activities WHERE id_activity = $1';
+        const text = 'DELETE FROM activities WHERE id_activity = $1 RETURNING id_class';
         const values = [id_activity];
-        await pool.query(text, values);
+        const id_class = (await pool.query(text, values)).rows[0].id_class;
+
+        // Obtiene el id_course
+        const text2 = `
+        SELECT m.id_course 
+        FROM modules AS m
+        INNER JOIN classes AS c
+        ON m.id_module = c.id_module
+        WHERE c.id_class = $1`;
+        const values2 = [id_class];
+        const id_course = (await pool.query(text2, values2)).rows[0].id_course;
+
+        // Obtiene el websocket
+        let io = socket.getSocket();
+        //console.log(`Emite evento a la sala: ${id_course+'class-section-room'}`)
+        io.in(id_course + 'activity-section-room').emit('activityDeleted');
 
         res.sendStatus(204);
     } catch (error) {
-        next({ error });
+        next({
+            error
+        });
     }
 }
 
@@ -185,7 +273,9 @@ function updateParticipation(id_activity, array_participation) {
     // Actualizar múltiples registros pasando un array de objetos: https://stackoverflow.com/questions/37059187/convert-object-array-to-array-compatible-for-nodejs-pg-unnest
 
     // Inserta el 'id_activity' en cada registro (Object) del array 'array_participation'
-    array_participation.map(participation => Object.assign(participation, { id_activity }));
+    array_participation.map(participation => Object.assign(participation, {
+        id_activity
+    }));
     // [ {id_user, id_activity, status} ]
 
     const text2 = `
