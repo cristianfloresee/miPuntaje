@@ -26,6 +26,7 @@ const lessonQuestions = require('./lesson_question');
 const activities = require('./activity');
 const activityParticipation = require('./activity_participation');
 const images = require('./image');
+const user_question_class = require('./user_question_class');
 
 // ----------------------------------------
 // Define express app
@@ -41,6 +42,7 @@ const app = express();
 app.use(auth);
 app.use('/colors', colors);
 app.use('/users', users);
+app.use('/user_question_class', user_question_class);
 app.use('/subjects', subjects);
 app.use('/calendars', calendars);
 app.use('/categories', categories);

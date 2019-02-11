@@ -9,6 +9,7 @@ var socket = require('../../index');
 
 // ----------------------------------------
 // Obtiene las preguntas que ya han sido agregadas a la clase.
+// + Enviar atributo winners: true/false
 // ----------------------------------------
 async function getLessonQuestions(req, res, next) {
 
@@ -26,8 +27,27 @@ async function getLessonQuestions(req, res, next) {
 
         console.log(`id_lesson: ${id_lesson}, id_category: ${id_category}, id_subcategory: ${id_subcategory}, difficulty: ${difficulty}, page_size: ${page_size}, page: ${page}`);
 
+        /*
+         CASE WHEN EXISTS (
+            SELECT id_user 
+            FROM activity_user AS au 
+            WHERE id_activity = a.id_activity 
+            AND status = 2
+        ) THEN TRUE ELSE FALSE END AS winners
+
+        */
+
         // Obtiene las preguntas por id de usuario (profesor) y id de asignatura 
-        const text = `SELECT c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, cq.status, cq.added_at, cq.updated_at
+        const text = `SELECT c.id_category, c.name AS category, s.id_subcategory, s.name AS subcategory, q.id_question, q.description, q.difficulty, q.shared, q.image, cq.status, cq.added_at, cq.updated_at,
+
+        CASE WHEN EXISTS (
+            SELECT id_user
+            FROM user_question_class
+            WHERE id_question = q.id_question
+            AND id_class = cq.id_class
+            AND status = 4
+        ) THEN TRUE ELSE FALSE END AS winners
+
         FROM questions AS q
         INNER JOIN class_question AS cq
         ON q.id_question = cq.id_question
@@ -35,7 +55,7 @@ async function getLessonQuestions(req, res, next) {
         ON q.id_subcategory = s.id_subcategory 
         INNER JOIN categories AS c 
         ON s.id_category = c.id_category
-        WHERE id_class = $1
+        WHERE cq.id_class = $1
         AND ($2::int IS NULL OR c.id_category = $2)
         AND ($3::int IS NULL OR s.id_subcategory = $3)
         AND ($4::int IS NULL OR q.difficulty = $4)
@@ -306,6 +326,7 @@ async function updateLessonQuestions(req, res, next) {
 
 
 // Actualiza el estado de una pregunta
+// + Estados: 1: no iniciada, 2: activa, 3: detenida, 4: finalizada
 async function updateLessonQuestion(req, res, next) {
     const id_class = req.params.classId;
     const id_question = req.params.questionId;
@@ -333,6 +354,49 @@ async function updateLessonQuestion(req, res, next) {
 
             // Si es que ya hay una pregunta iniciada, enviar null para que no se inicie la clase
             if (any_question_started) return res.send(null);
+        }
+
+        // Si es que se va a reiniciar la pregunta (estado no iniciada).
+        if (status == 1) {
+            // Eliminar los registros de participación de la pregunta de clase
+            const text9 = `
+            DELETE FROM user_question_class
+            WHERE id_question = $1
+            AND id_class = $2`;
+            const values9 = [id_question, id_class];
+            await pool.query(text9, values9);
+
+
+
+            //console.log("WETA: ", socket.getStudentsInClassroom(id_class));
+
+
+
+        }
+
+        // Si es que finaliza la pregunta
+        if (status == 4) {
+
+            // Vacía el array global de participantes.
+            socket.setStudentParticipants({
+                id_class: id_class,
+                data: null
+            });
+
+            // Modifica el estado de los estudiantes en clase
+            let students_in_class = socket.getStudentsInClassroom(id_class);
+            students_in_class.forEach(student => {
+                student.participation_status = 1;
+            });
+
+            // Emite nuevo array de participantes a estudiantes
+            // + Creo que no es necesario, lo puedo hacer desde el mismo cliente y dando un tiempo para que el
+            //   estudiante alcance a ver quien gano.
+            // let io = socket.getSocket();
+            // io.in(id_class + 'play-question-section')
+            //     .emit('studentHasEnteredToTheClassroom',
+            //         socket.getStudentsInClassroom(id_class)
+            //     );
 
         }
 
@@ -374,9 +438,6 @@ async function updateLessonQuestion(req, res, next) {
             rows
         } = await pool.query(text2, values2);
 
-        // Obtiene el websocket
-        let io = socket.getSocket();
-
         // Obtiene los datos de la pregunta
         const text5 = `
         SELECT id_question, difficulty, description 
@@ -387,6 +448,8 @@ async function updateLessonQuestion(req, res, next) {
 
         question.status = status;
 
+        // Obtiene el socket
+        let io = socket.getSocket();
         // Emite evento a los estudiantes que esten en la sección de juego
         io.in(id_class + 'play-question-section').emit('playingTheClassQuestion', {
             question
@@ -417,7 +480,10 @@ async function updateLessonQuestion(req, res, next) {
 
 
 function deleteLessonQuestions(array_questions, id_lesson) {
-    const text = `DELETE FROM class_question WHERE (id_question, id_class) IN (SELECT * FROM UNNEST ($1::int[], $2::int[]))`;
+    const text = `
+    DELETE FROM class_question 
+    WHERE (id_question, id_class) 
+    IN (SELECT * FROM UNNEST ($1::int[], $2::int[]))`;
     const values = formatWorkspaceArray(array_questions, id_lesson);
     return {
         text,
@@ -426,7 +492,9 @@ function deleteLessonQuestions(array_questions, id_lesson) {
 }
 
 function insertLessonQuestions(array_questions, id_lesson) {
-    const text = `INSERT INTO class_question (id_question, id_class) SELECT * FROM UNNEST ($1::int[], $2::int[])`;
+    const text = `
+    INSERT INTO class_question (id_question, id_class) 
+    SELECT * FROM UNNEST ($1::int[], $2::int[])`;
     const values = formatWorkspaceArray(array_questions, id_lesson);
     return {
         text,
@@ -445,6 +513,7 @@ function formatWorkspaceArray(array_questions, id_lesson) {
 
     return [values1, values2]
 }
+
 
 // ----------------------------------------
 // Delete Question

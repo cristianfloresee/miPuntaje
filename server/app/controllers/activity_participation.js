@@ -74,6 +74,7 @@ async function updateActivityParticipations(req, res, next) {
         }));
         // [ {id_user, id_activity, status} ]
 
+        
         const text = `
             UPDATE activity_user AS au 
             SET status = s.status 

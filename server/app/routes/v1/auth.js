@@ -16,7 +16,8 @@ var api = express.Router();
 // ----------------------------------------
 // Routes and Controllers
 // ----------------------------------------
-api.post('/login', validation.login, validate.checkResult, authController.login);
+//api.post('/login', validation.login, validate.checkResult, authController.login);
+api.post('/login', validation.login, authController.login);
 //api.post('/signup', );
 //api.post('/forgot', );
 //api.post('/reset', );

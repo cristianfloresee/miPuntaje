@@ -227,7 +227,7 @@ function initWebServer() {
 
 
 
-                // Entrar y salir de la sección de juego de la pregunta de clase
+                // Entrar a la sección de juego de la pregunta de clase
                 socket.on('enterToPlayQuestionSectionRoomAsTeacher', async (params) => {
                     socket.join(params.id_class + 'teacher__play_question_section');
                     console.log("enterToPlayQuestionSectionRoomAsTeacher: ", params.id_class + 'teacher__play_question_section');
@@ -238,55 +238,119 @@ function initWebServer() {
                     // 
 
                     //socket.emit('aStudentHasEntered', student_participants_of_a_question[params.id_class]);
-                    socket.emit('aStudentHasEntered', student_participants_of_a_question[params.id_class]);
+                    // Emite a si mismo el listado de estudiantes que estan participando por responder.
+                    socket.emit('aStudentHasEntered', {
+                        student_participants: student_participants_of_a_question[params.id_class],
+                        //student_selected: 
+                    });
                 });
 
+                // listener: Cuando estudiante sale de la sala de clases.
                 socket.on('exitToPlayQuestionSectionRoomAsTeacher', (params) => {
                     console.log("exitToPlayQuestionSectionRoomAsTeacher: ", params.id_class + 'teacher__play_question_section');
+                    // Estudiante sale de la sala socket.
                     socket.leave(params.id_class + 'teacher__play_question_section');
+
+                    // Emite a otros estudiantes que salio de la sala.
+
                 });
 
 
-                // Entrar al conjunto de participantes por responder preguntas de la clase (siendo estudiante)
+                // Entra al conjunto de participantes por responder preguntas de la clase (siendo estudiante)
                 socket.on('enterToParticipantsToPlayQuestionSectionRoomAsStudent', async (params) => {
+
+                    // Se une a la sala socket de estudiantes que estan participando.
                     socket.join(params.id_class + 'student__participant_to_play_question_section');
                     console.log("+ enterToParticipantsToPlayQuestionSectionRoomAsStudent: ", params.id_class + 'student__participant_to_play_question_section');
 
-                    // Crear el array si no existe y hacer push
+                    // Crear el array 'student_participants' si no existe.
                     if (!student_participants_of_a_question[params.id_class]) student_participants_of_a_question[params.id_class] = [];
+                    // Agregar el id_socket y el participation_status al objeto user.
                     params.user.id_socket = socket.id;
-                    student_participants_of_a_question[params.id_class].push(params.user);
-                    console.log("****** CORAJE: ", student_participants_of_a_question);
+                    params.user.selected = null;
 
-                    // Emite a los profesores que un estudiante ingreso a la sala.
-                    socket.to(params.id_class + 'teacher__play_question_section').emit('aStudentHasEntered', {
-                        // Necesito los datos del estudiante..
-                        student: params.user,
-                        //id_socket: socket.id
-                    });
+                    // Hacer push al array de participantes de la clase.
+                    let index_participant_exist = student_participants_of_a_question[params.id_class].findIndex(student => student.id_user == params.user.id_user);
+                    if(index_participant_exist >= 0){
+                        console.log("YA EXISTE PARTICIPANTE: ", index_participant_exist);
+                    }
+                    else{
+                        student_participants_of_a_question[params.id_class].push(params.user);
+                    }
+                    
+
+
+                    // Cambia el estado del estudiante en el array global 'students_in_classrooms'.
+                    let index_student = students_in_classrooms[params.id_class].findIndex(student => student.id_user == params.user.id_user);
+                    if (index_student >= 0) {
+                        students_in_classrooms[params.id_class][index_student].participation_status = 2;
+                    }
+
+                    // Emite a los profesores que un estudiante ingreso a la sala? o ingreso a la participación.
+                    socket.to(params.id_class + 'teacher__play_question_section')
+                        .emit('aStudentHasEntered', {
+                            // Necesito los datos del estudiante..
+                            new_student_participant: params.user,
+                            //id_socket: socket.id
+                        });
+
+                    // Indica a todos los estudiantes en la sala de clases que este estudiante decidió participar
+                    console.log(" + emite evento a todos los students: ", params.id_class + 'play_question_section');
+
+                    //(params.id_class + 'play-question-section');
+
+
+                    // Emite a todos los estudiantes que estan dentro de la clase.
+                    // Emite a los estudiantes de la sala de clases (se incluye) que desea responder la pregunta.
+                    io.sockets.in(params.id_class + 'play-question-section')
+                        .emit('studentHasEnteredToTheClassroom', {
+                            id_user: params.user.id_user,
+                            update_student_status: 2 // Indica que desea participar
+                        })
+
 
 
                 });
 
 
+                // params: {id_class, user}
                 socket.on('exitToParticipantsToPlayQuestionSectionRoomAsStudent', async (params) => {
                     socket.leave(params.id_class + 'student__participant_to_play_question_section');
                     console.log("exitToParticipantsToPlayQuestionSectionRoomAsStudent: ", params.id_class + 'student__participant_to_play_question_section');
 
                     console.log("participants: ", student_participants_of_a_question[params.id_class]);
-                    let index_student_participant = student_participants_of_a_question[params.id_class].findIndex(student => student.id_user == params.user.id_user);
-                    if (index_student_participant >= 0) student_participants_of_a_question[params.id_class].splice(index_student_participant, 1);
 
-                    // Emite a los profesores que un estudiante SALÍO de la sala.
-                    socket.to(params.id_class + 'teacher__play_question_section').emit('aStudentHasLeft', {
-                        // Necesito los datos del estudiante..
-                        student: params.user
-                    });
+                    // Si esta como participante, quitarlo del array.
+                    // + Arreglar esto en el cliente. No debería emitir este evento si nunca participo.
+                    if (student_participants_of_a_question[params.id_class]) {
+                        let index_student_participant = student_participants_of_a_question[params.id_class].findIndex(student => student.id_user == params.user.id_user);
+                        if (index_student_participant >= 0) student_participants_of_a_question[params.id_class].splice(index_student_participant, 1);
+
+                        // Emite a los profesores que un estudiante SALÍO de la sala.
+                        socket.to(params.id_class + 'teacher__play_question_section').emit('aStudentHasLeft', {
+                            student: params.user
+                        });
+                    }
+
+                    let index_student = students_in_classrooms[params.id_class].findIndex(student => student.id_user == params.user.id_user);
+                    if (index_student >= 0) {
+                        students_in_classrooms[params.id_class][index_student].participation_status = 1;
+                    }
+
+
+
+                    // Emite a los estudiantes de la sala de clases (se incluye) que ha cancelado su participación.
+                    io.sockets.in(params.id_class + 'play-question-section')
+                        .emit('studentHasEnteredToTheClassroom', {
+                            id_user: params.user.id_user,
+                            update_student_status: 1 // Indica cancelación.
+                        });
+
                 });
 
 
                 // + Es posible enviar la pregunta iniciada (si es que hay)?
-                // Entrar a la sala de la clase para responder preguntas (siendo estudiante)
+                // Entrar a la sala de clase para responder preguntas (siendo estudiante)
                 socket.on('enterToPlayQuestionSectionRoomAsStudent', async (params) => {
 
                     console.log(" + enterToPlayQuestionSectionRoomAsStudent: ", params.id_class + 'play-question-section');
@@ -324,27 +388,30 @@ function initWebServer() {
 
                     // Busca si el estudiante 
 
-                    // Emite a otros estudiantes que hay una pregunta iniciada (si es que hay)??? a otros o a el mismo?
+                    // Emite al mismo estudiante que hay una pregunta iniciada (si es que hay)
                     socket.emit('playingTheClassQuestion', {
                         question: question
                     });
 
-                     // Si no existe el array de estudiantes dentro de la clase, crea el array
-                     if (!students_in_classrooms[params.id_class]) students_in_classrooms[params.id_class] = [];
-                     // Inserta el id_socket dentro del objeto usuario ya existente
-                     params.user.id_socket = socket.id;
-                     // Inserta el objeto estudiante en el array de estudiantes en clase recién creado
-                     students_in_classrooms[params.id_class].push(params.user);
- 
-                     console.log("Emite evento de ingreso de estudiante a la sala...");
-                     // Emite a otros estudiantes que ingreso a la sala.
-                     setTimeout(()=>{
-                        socket.to(params.id_class + 'play-question-section').emit('studentHasEnteredToTheClassroom', {
-                            student: params.user,
-                            //id_socket: socket.id
-                        });
-                     }, 3000)
-                     
+                    // Si no existe el array de estudiantes dentro de la clase, crea el array
+                    if (!students_in_classrooms[params.id_class]) students_in_classrooms[params.id_class] = [];
+                    // Inserta el id_socket dentro del objeto usuario ya existente
+                    params.user.id_socket = socket.id;
+                    // Inserta el estado de participación por defecto del estudiante: 1 (esperando)
+                    params.user.participation_status = 1;
+                    // Inserta el objeto estudiante en el array de estudiantes en clase recién creado
+                    students_in_classrooms[params.id_class].push(params.user);
+
+
+
+                    // Emite a los estudiantes de la sala de clases (se incluye) 
+                    // un nuevo listado de los estudiantes y sus estados (1: en espera, 2: desea responder, 3: )
+                    io.sockets.in(params.id_class + 'play-question-section')
+                        .emit('studentHasEnteredToTheClassroom',
+                            students_in_classrooms[params.id_class]
+                        );
+
+
 
 
 
@@ -356,20 +423,85 @@ function initWebServer() {
                     });*/
                 });
 
+                // Listener: Cuando selecciona a un estudiante para responder la pregunta (profesor).
+                // params: { id_class, user}
                 socket.on('selectStudentToParticipate', (params) => {
                     console.log(" + selectStudentToParticipate: ", params);
-                    socket.emit(params.id_socket)
-                    socket.to(params.id_socket).emit('studentSelectedToParticipate', );
+
+                    // Modifica array global de participantes
+                    let index_participant = student_participants_of_a_question[params.id_class].findIndex(participant => participant.id_user == params.user.id_user);
+                    if (index_participant >= 0) student_participants_of_a_question[params.id_class][index_participant].selected = true;
+
+                    // Modifica array global de estudiantes en clases
+                    let index_student = students_in_classrooms[params.id_class].findIndex(student => student.id_user == params.user.id_user);
+                    if(index_student >= 0)  students_in_classrooms[params.id_class][index_student].participation_status = 3;
+
+                    // Emite a estudiantes de la sala que uno fue seleccionado
+                    socket.to(params.id_class + 'play-question-section').emit('studentSelectedToParticipate', params.user);
+                    // Emite a si mismo que un estudiante fue seleccionado para responder
+                    socket.emit('aStudentHasEntered', {
+                        student_selected: params.user
+                    });
+
+
                 });
 
+
+
+                // Estudiante sale de la sala de clases.
+                // + params: { id_class, user }
                 socket.on('exitToPlayQuestionSectionRoomAsStudent', (params) => {
                     console.log(" + exitToPlayQuestionSectionRoomAsStudent: ", params.id_class + 'play-question-section');
                     setTimeout(() => {
                         console.log(" + user rooms: ", socket.rooms);
                     }, 2000);
                     socket.leave(params.id_class + 'play-question-section');
+
+
+
+                    // Si esta como participante, quitarlo del array.
+                    // + Arreglar esto en el cliente. No debería emitir este evento si nunca participo.
+                    console.log(" + eliminando al estudiante: ", params);
+                    if (students_in_classrooms[params.id_class]) {
+                        let index_student = students_in_classrooms[params.id_class].findIndex(student => student.id_user == params.user.id_user);
+                        if (index_student >= 0) students_in_classrooms[params.id_class].splice(index_student, 1);
+
+                        // Emite a otros estudiante, que el actual salío de la sala.
+                        socket.to(params.id_class + 'play-question-section')
+                            .emit('studentHasLeftTheClassroom', {
+                                // Necesito los datos del estudiante..
+                                student: params.user
+                            });
+                    }
                 });
 
+                socket.on('cancelSelectedStudentAsTeacher', (params) => {
+
+                    console.log(" + cancelSelectedStudentAsTeacher: ", params);
+
+                    if (students_in_classrooms[params.id_class]) {
+                        let index_participant = student_participants_of_a_question[params.id_class].findIndex(participant => participant.id_user == params.user.id_user);
+                        console.log("index participant: ", index_participant);
+                        console.log("participant: ", student_participants_of_a_question[params.id_class][index_participant]);
+                        if (index_participant >= 0) student_participants_of_a_question[params.id_class][index_participant].selected = false;
+                    }
+
+                    if (students_in_classrooms[params.id_class]) {
+                        let index_student = students_in_classrooms[params.id_class].findIndex(student => student.id_user == params.user.id_user);
+                        if (index_student >= 0) students_in_classrooms[params.id_class][index_student].participation_status = 2;
+                    }
+
+                    // Emite al mismo profesor y a todos los compañeros de la sala.
+                    socket.emit('aStudentHasEntered', {
+                        cancel_student_selected: params.user.id_user
+                    });
+
+                    // Emite a estudiantes de la sala de clases.
+                    io.sockets.in(params.id_class + 'play-question-section')
+                        .emit('studentHasEnteredToTheClassroom',
+                            students_in_classrooms[params.id_class]
+                        );
+                })
 
 
 
@@ -437,6 +569,7 @@ function getuserConnected(id_user) {
     return users_connected.find(user => user.id_user == id_user);
 }
 
+
 function getusersConnectedByRoom(room) {
     return users_connected.filter(user => user.room == room);
 }
@@ -495,6 +628,19 @@ module.exports.getusersConnected = () => {
     return users_connected;
 }
 
+module.exports.setStudentParticipants = (params) => {
+    student_participants_of_a_question[params.id_class] = params.data;
+}
+
+module.exports.getStudentParticipants = (id_class) => {
+    return student_participants_of_a_question[id_class];
+}
+
+
+// Obtiene 
+module.exports.getStudentsInClassroom = (id_class) => {
+    return students_in_classrooms[id_class];
+}
 /*
 module.exports = {
     getSocket: () => io,

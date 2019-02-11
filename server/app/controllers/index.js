@@ -2,6 +2,7 @@
 // Load Modules
 // ----------------------------------------
 const user = require('./user');
+const user_question_class = require('./user_question_class');
 const color = require('./color');
 const calendar = require('./calendar');
 const category = require('./category');
@@ -39,5 +40,6 @@ module.exports = {
     _lessonQuestion,
     enrollment,
     _image,
-    _workspace
+    _workspace,
+    user_question_class,
 };

@@ -278,6 +278,7 @@ function updateParticipation(id_activity, array_participation) {
     }));
     // [ {id_user, id_activity, status} ]
 
+    // Actualiza múltiples registros
     const text2 = `
 	UPDATE activity_user AS au 
 	SET status = s.status 
