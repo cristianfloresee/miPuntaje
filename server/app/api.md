@@ -4,15 +4,20 @@ Esta documentación lo ayudará a familiarizarse con los recursos de la API Ruvi
 
 # API Rest
 
-URL Base: https://rickandmortyapi.com/api/
+URL Base: 
 
-La URL base contiene información sobre todos los recursos de API disponibles. Todas las solicitudes son solicitudes GET y SOBRE https. Todas las respuestas devolverán datos en `json`.
-
-Ejmeplo de Solicitud:
 ```
 https://rickandmortyapi.com/api/
 ```
 
+La URL base contiene información sobre todos los recursos de API disponibles. Todas las solicitudes son solicitudes GET y sobre https. Todas las respuestas devolverán datos en `json`.
+
+Ejemplo de solicitud:
+```
+https://rickandmortyapi.com/api/
+```
+
+Respuesta del servidor:
 ```JSON
 {
   "activities": "https://rickandmortyapi.com/api/activities",
@@ -23,11 +28,11 @@ https://rickandmortyapi.com/api/
 
 Actualmente hay 12 recursos disponibles:
 + activities: se usa para obtener todas las actividades.
-+ calendars: se usa para obtener todas los períodos.
++ calendars: se usa para obtener todas los períodos académicos.
 + categories: se usa para obtener todas las categorías.
 
 # Información y Paginación
-La API paginará automáticamente las respuestas. Recibirás hasta 20 documentos por página.
+La API paginará automáticamente las respuestas. Recibirá hasta 20 registros por página.
 Cada recurso contiene un objeto con información sobre la respuesta.
 
  Clave | Tipo          | Descripción 
@@ -37,11 +42,11 @@ Cada recurso contiene un objeto con información sobre la respuesta.
  next  | string (URL)  | URL de la página siguiente (si existe)
  prev  | string (URL)  | URL de la página anterior (si existe)
 
- Ejemplo de Solicitud:
+ Ejemplo de solicitud:
  ```
  https://rickandmortyapi.com/api/character/
  ```
-
+Respuesta del servidor:
  ```JSON
  {
   "info": {
@@ -60,15 +65,16 @@ Cada recurso contiene un objeto con información sobre la respuesta.
 
  Ejemplo de Solicitud:
  ```
- https://rickandmortyapi.com/api/character/?page=19
+ https://rickandmortyapi.com/api/calendars/?page=19
  ```
+ Respuesta del servidor:
  ```JSON
  {
   "info": {
     "count": 394,
     "pages": 20,
-    "next": "https://rickandmortyapi.com/api/character/?page=20",
-    "prev": "https://rickandmortyapi.com/api/character/?page=18"
+    "next": "https://rickandmortyapi.com/api/calendars/?page=20",
+    "prev": "https://rickandmortyapi.com/api/calendars/?page=18"
   },
   "results": [
     {
@@ -217,15 +223,16 @@ AND ($2::int IS NULL OR id_module IN (
 
 ## Patrón DAO
 
-Se opto por utilizar RAW Queries por sobre algún ORM en node.js. En la comunidad se hicieron recomendaciones como Sequealize pero debido a la baja de rendimiento en general que producen los ORMs se opto por usar Raw Queries.
-Como se menciona en un comienzo se trabajo con postgres y los manejadores dispnobiles en node.js son promise-postgres y node-postgres. En nuestro caso se utilizó node-postgres debido a la cantidad de descargas y mayor comunidad que tiene.
-Un problema que se tuvo a la hora de crear los controlades del Backend es saber donde poner las consultas. En un comienzo se tuvo algo como lo siguiente.
+Se optó utilizar `RAW Queries` por sobre algún ORM. En la comunidad se hicieron recomendaciones como `Sequealize` pero debido a la baja de rendimiento en general que producen los ORMs se optó por utilizar `Raw Queries`.
+Como se menciona en un comienzo, se trabajo con postgres y los manejadores disponibles en node.js son `promise-postgres` y `node-postgres`. En nuestro caso se utilizó `node-postgres` debido a la cantidad de descargas y la mayor comunidad que esta tiene.
+
+Un problema que se tuvo a la hora de crear los controlades del Backend es saber donde poner las queries. En un comienzo se tuvo algo como lo siguiente.
 
 <img src="https://i.imgur.com/2mQVuwT.jpg">
 
 Como se puede observar, en casos donde las consultas se vuelven complejas esto llega a producir una especie de contaminación en nuestro código.
-Para esta situación en la comunidad se recomendo:
-+ usar algún ORM para abstraer las consultas.
-+ Tener las consultas en archivos separados y realizar una carga al inicio. (no entendible)
-+ usar una capa de Acceso a Datos o DAO para asi limpiar el controlador.
-+ El patrón DAO se puede acompañar de una capa extra que ejecute las queries solamente, a este le enviariamos el objeto de conexion y el query
+Para esta situación la comunidad en redes sociales recomendó:
++ Utilizar algún ORM para abstraer las consultas.
++ Tener las consultas en archivos separados y realizar una carga al inicio (aún no se comprende bien esta idea).
++ Usar una capa de Acceso a Datos (DAO) para asi limpiar el controlador.
++ El patrón DAO se puede acompañar de una capa extra que ejecute solo las queries, a este se le debe enviar el objeto de conexion y la query.

@@ -146,16 +146,13 @@ async function deleteCalendar(req, res, next) {
 // ----------------------------------------
 async function countCalendar(req, res) {
     try {
-        const year = req.query.year;
-        const semester = req.query.semester;
-
         const text = 'SELECT count(*) FROM calendars';
         const {
             rows
         } = await pool.query(text);
 
-        res.json({
-            total_items: rows[0].count
+        res.json({  
+            result: rows[0].count
         });
     } catch (error) {
         next({ error});

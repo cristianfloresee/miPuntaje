@@ -12,7 +12,7 @@ const pool = require('../database');
 // ----------------------------------------
 async function getUsers(req, res, next) {
     try {
-        const search = req.query.search || null;
+        //const search = req.query.search || null;
         const role = req.query.role || null;
         const status = req.query.status || null;
         const page_size = req.query.page_size || 20;
